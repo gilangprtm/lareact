@@ -16,6 +16,11 @@ class CategoryService extends BaseService implements CategoryServiceInterface
         return new Category();
     }
 
+    protected function getFilterableFields(): array
+    {
+        return ['search'];
+    }
+
     protected function beforeCreate(array &$data): void
     {
         $data['slug'] = $this->generateSlug($data['name']);

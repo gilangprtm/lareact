@@ -15,6 +15,11 @@ class PublisherService extends BaseService implements PublisherServiceInterface
         return new Publisher();
     }
 
+    protected function getFilterableFields(): array
+    {
+        return ['search'];
+    }
+
     protected function beforeCreate(array &$data): void
     {
         if (isset($data['logo'])) {

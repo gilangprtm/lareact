@@ -3,146 +3,46 @@
 namespace App\Http\Controllers\DB;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\DB\BookRequest;
 use App\Models\Book;
-use App\Services\DB\Contracts\BookServiceInterface;
-use App\Enums\MessageType;
-use Illuminate\Http\RedirectResponse;
-use Inertia\Response;
+use App\Services\DB\Providers\BookService;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class BookController extends Controller
 {
-    protected $pageSettings;
-
     public function __construct(
-        private readonly BookServiceInterface $bookService
-    ) {
-        $this->pageSettings = [
-            'title' => 'Book',
-            'subtitle' => 'Manage all books in the system'
-        ];
+        protected BookService $bookService
+    ) {}
+
+    public function index(): LengthAwarePaginator
+    {
+        return $this->bookService->getAllWithRelations();
     }
 
-    public function index(): Response
+    public function find(int $id): Book
     {
-        return inertia('Book/Index', [
-            'datas' => $this->bookService->getAllWithRelations(),
-            'page_settings' => $this->pageSettings,
-            'state' => $this->getState()
-        ]);
+        return $this->bookService->find($id);
     }
 
-    public function create(): Response
+    public function create(array $data): Book
     {
-        return inertia('Book/Form', [
-            'data' => null,
-            'page_settings' => array_merge($this->pageSettings, [
-                'method' => 'POST',
-                'action' => route('books.store'),
-                'mode' => 'create'
-            ])
-        ]);
+        return $this->bookService->create($data);
     }
 
-    public function store(BookRequest $request): RedirectResponse
+    public function update(array $data, int $id): Book
     {
-        try {
-            $this->bookService->create($request->validated());
-            return redirect()
-                ->route('books.index')
-                ->with('message', MessageType::CREATED->message('Book'));
-        } catch (\Throwable $e) {
-            return back()
-                ->withInput()
-                ->with('error', MessageType::ERROR->message('Book'));
-        }
+        $book = $this->bookService->find($id);
+        return $this->bookService->update($data, $book);
     }
 
-    public function edit(Book $book): Response
+    public function delete(int $id): bool
     {
-        return inertia('Book/Form', [
-            'data' => $book->load([
-                'category:id,name',
-                'publisher:id,name',
-                'authors:id,name',
-                'images',
-                'files'
-            ]),
-            'page_settings' => array_merge($this->pageSettings, [
-                'method' => 'PUT',
-                'action' => route('books.update', $book),
-                'mode' => 'edit'
-            ])
-        ]);
+        $book = $this->bookService->find($id);
+        return $this->bookService->delete($book);
     }
 
-    public function view(Book $book): Response
+    public function getAll(): Collection
     {
-        return inertia('Book/Form', [
-            'data' => $book->load([
-                'category:id,name',
-                'publisher:id,name',
-                'authors:id,name',
-                'images',
-                'files'
-            ]),
-            'page_settings' => array_merge($this->pageSettings, [
-                'method' => 'GET',
-                'action' => route('books.edit', $book),
-                'mode' => 'view'
-            ])
-        ]);
-    }
-
-    public function update(BookRequest $request, Book $book): RedirectResponse
-    {
-        try {
-            $this->bookService->update($request->validated(), $book->id);
-            return redirect()
-                ->route('books.index')
-                ->with('message', MessageType::UPDATED->message('Book'));
-        } catch (\Throwable $e) {
-            return back()
-                ->withInput()
-                ->with('error', MessageType::ERROR->message('Book'));
-        }
-    }
-
-    public function destroy(Book $book): RedirectResponse
-    {
-        if ($book->loans()->exists()) {
-            return back()->with('error', 'Cannot delete book with active loans');
-        }
-
-        try {
-            $this->bookService->delete($book->id);
-            return redirect()
-                ->route('books.index')
-                ->with('message', MessageType::DELETED->message('Book'));
-        } catch (\Throwable $e) {
-            return back()
-                ->with('error', MessageType::ERROR->message('Book'));
-        }
-    }
-
-    protected function getState(): array
-    {
-        $defaultState = [
-            // Filter & Search
-            'search' => request('search', ''),
-
-            // Sorting
-            'field' => request('field', 'id'),
-            'direction' => request('direction', 'desc'),
-
-            // Pagination
-            'page' => request('page', 1),
-            'load' => request('load', 10),
-        ];
-
-        return array_merge(
-            $defaultState,
-            request()->only(array_keys($defaultState))
-        );
+        return $this->bookService->getAll();
     }
 }

@@ -22,7 +22,7 @@ abstract class BaseService implements BaseServiceInterface
     }
 
     abstract protected function getModel(): Model;
-
+    abstract protected function getFilterableFields(): array;
     protected function beforeCreate(array &$data): void {}
     protected function afterCreate(Model $model, array $data): void {}
 
@@ -37,7 +37,7 @@ abstract class BaseService implements BaseServiceInterface
         return $this->getModel()::query()
             ->with($relations)
             ->withCount($counts)
-            ->filter(request()->only(['search']))
+            ->filter(request()->only($this->getFilterableFields()))
             ->sorting(request()->only(['field', 'direction']))
             ->paginate(request('load', 10))
             ->appends(request()->query());

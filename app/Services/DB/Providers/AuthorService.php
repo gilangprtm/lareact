@@ -15,6 +15,11 @@ class AuthorService extends BaseService implements AuthorServiceInterface
         return new Author();
     }
 
+    protected function getFilterableFields(): array
+    {
+        return ['search'];
+    }
+
     public function getAllWithBooks(int $perPage = 10): LengthAwarePaginator
     {
         return $this->getPaginated(

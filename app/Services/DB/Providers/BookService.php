@@ -15,6 +15,11 @@ class BookService extends BaseService implements BookServiceInterface
         return new Book();
     }
 
+    protected function getFilterableFields(): array
+    {
+        return ['search'];
+    }
+
     protected function beforeCreate(array &$data): void
     {
         $this->extractAndUnsetData($data);
