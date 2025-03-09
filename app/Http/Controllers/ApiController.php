@@ -14,8 +14,8 @@ namespace App\Http\Controllers;
  *         ),
  *     ),
  *     @OA\Server(
- *         url="http://localhost:8000",
- *         description="Local Development Server"
+ *         url=L5_SWAGGER_CONST_HOST,
+ *         description="API Server"
  *     ),
  *     @OA\Components(
  *         @OA\Response(

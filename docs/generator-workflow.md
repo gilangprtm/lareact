@@ -92,6 +92,28 @@ Route::prefix('v1')->group(function () {
 });
 ```
 
+### 6. Memperbarui Dokumentasi API
+
+Setelah mendaftarkan route, regenerasi dokumentasi API untuk memastikan path di dokumentasi sesuai dengan konfigurasi rute:
+
+```bash
+php artisan api:docs --regenerate
+```
+
+Command ini akan:
+
+1. Menghasilkan ulang dokumentasi OpenAPI dari anotasi di controller
+2. Memperbarui path API berdasarkan named routes yang terdaftar di aplikasi
+3. Memastikan dokumentasi tetap konsisten meskipun struktur rute berubah
+
+#### Tips Pengelolaan Dokumentasi API
+
+- **Setelah mengubah prefix API** (misalnya dari `/api` menjadi `/api/v1`), jalankan `php artisan api:docs --regenerate`
+- **Setelah menambahkan endpoint baru**, jalankan `php artisan api:docs --regenerate`
+- **Untuk memperbarui path tanpa regenerasi penuh**, gunakan `php artisan api:docs` (tanpa flag `--regenerate`)
+
+Command ini bekerja dengan named routes, sehingga pastikan semua route API memiliki nama dengan format `api.*` (contoh: `api.categories.index`, `api.authors.show`, dll).
+
 ## Contoh Penggunaan untuk Entitas Baru
 
 Misalkan kita ingin membuat API untuk entitas "Tag":

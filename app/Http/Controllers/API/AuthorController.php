@@ -30,11 +30,11 @@ class AuthorController extends ApiController
      * Get all authors.
      *
      * @OA\Get(
-     *     path="/api/authors",
+     *     path="/api/v1/authors",
      *     summary="Retrieve all authors",
      *     description="Get a paginated list of all authors with optional filters",
      *     operationId="getAuthors",
-     *     tags={"Authors"},
+     *     tags={"authors"},
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
@@ -116,11 +116,11 @@ class AuthorController extends ApiController
      * Get a specific author by ID.
      *
      * @OA\Get(
-     *     path="/api/authors/{id}",
+     *     path="/api/v1/authors/{id}",
      *     summary="Get author by ID",
      *     description="Returns a single author",
      *     operationId="getAuthorById",
-     *     tags={"Authors"},
+     *     tags={"authors"},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -163,11 +163,11 @@ class AuthorController extends ApiController
      * Create a new author.
      *
      * @OA\Post(
-     *     path="/api/authors",
+     *     path="/api/v1/authors",
      *     summary="Create a new author",
      *     description="Creates a new author and returns the created resource",
      *     operationId="createAuthor",
-     *     tags={"Authors"},
+     *     tags={"authors"},
      *     @OA\RequestBody(
      *         required=true,
      *         description="Author data",
@@ -242,11 +242,11 @@ class AuthorController extends ApiController
      * Update an existing author.
      *
      * @OA\Put(
-     *     path="/api/authors/{id}",
+     *     path="/api/v1/authors/{id}",
      *     summary="Update an author",
      *     description="Updates an author and returns the updated resource",
      *     operationId="updateAuthor",
-     *     tags={"Authors"},
+     *     tags={"authors"},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -339,11 +339,11 @@ class AuthorController extends ApiController
      * Delete an author.
      *
      * @OA\Delete(
-     *     path="/api/authors/{id}",
+     *     path="/api/v1/authors/{id}",
      *     summary="Delete an author",
      *     description="Deletes an author",
      *     operationId="deleteAuthor",
-     *     tags={"Authors"},
+     *     tags={"authors"},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

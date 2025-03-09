@@ -9,6 +9,7 @@ Proyek ini menggunakan pendekatan Data Transfer Object (DTO) untuk menghasilkan 
 - [Alur Kerja Generator API](docs/generator-workflow.md) - Penjelasan tentang alur kerja lengkap generator API
 - [Diagram Generator API](docs/generator-diagram.md) - Diagram visual alur penggunaan generator
 - [FAQ DTO dan Generator](docs/dto-faq.md) - Pertanyaan umum tentang pendekatan DTO
+- [Pengelolaan Dokumentasi API](docs/api-docs-management.md) - Panduan untuk mengelola dokumentasi API
 - [Changelog](CHANGELOG.md) - Log perubahan dan pengembangan proyek
 
 ## Struktur Project
@@ -172,6 +173,26 @@ Dokumentasi API dapat diakses melalui endpoint:
 ```
 /api/docs
 ```
+
+### Mengelola Dokumentasi API
+
+Proyek ini dilengkapi dengan command khusus untuk mengelola dokumentasi API secara dinamis:
+
+```bash
+# Regenerasi dokumentasi API dan perbarui paths
+php artisan api:docs --regenerate
+
+# Memperbarui path di dokumentasi tanpa regenerasi penuh
+php artisan api:docs
+```
+
+Command ini akan:
+
+1. Menghasilkan dokumentasi Swagger dari anotasi OpenAPI (jika menggunakan flag `--regenerate`)
+2. Menggunakan named routes untuk memperbarui path di dokumentasi API secara dinamis
+3. Memastikan dokumentasi tetap konsisten meskipun prefix rute berubah
+
+> **Penting:** Setelah mengubah struktur rute di `routes/api.php`, selalu jalankan `php artisan api:docs --regenerate` untuk memastikan dokumentasi tetap akurat.
 
 ### Generator Kode API
 

@@ -11,15 +11,15 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
-            "description": "Local Development Server"
+            "url": "http://lareact.test",
+            "description": "API Server"
         }
     ],
     "paths": {
-        "/api/authors": {
+        "/api/v1/authors": {
             "get": {
                 "tags": [
-                    "Authors"
+                    "authors"
                 ],
                 "summary": "Retrieve all authors",
                 "description": "Get a paginated list of all authors with optional filters",
@@ -130,7 +130,7 @@
             },
             "post": {
                 "tags": [
-                    "Authors"
+                    "authors"
                 ],
                 "summary": "Create a new author",
                 "description": "Creates a new author and returns the created resource",
@@ -184,10 +184,10 @@
                 }
             }
         },
-        "/api/authors/{id}": {
+        "/api/v1/authors/{id}": {
             "get": {
                 "tags": [
-                    "Authors"
+                    "authors"
                 ],
                 "summary": "Get author by ID",
                 "description": "Returns a single author",
@@ -238,7 +238,7 @@
             },
             "put": {
                 "tags": [
-                    "Authors"
+                    "authors"
                 ],
                 "summary": "Update an author",
                 "description": "Updates an author and returns the updated resource",
@@ -308,7 +308,7 @@
             },
             "delete": {
                 "tags": [
-                    "Authors"
+                    "authors"
                 ],
                 "summary": "Delete an author",
                 "description": "Deletes an author",
@@ -339,6 +339,351 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Author deleted successfully"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/categories": {
+            "get": {
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Retrieve all categories",
+                "description": "Get a paginated list of all categories with optional filters",
+                "operationId": "getcategories",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "load",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "description": "Field to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id"
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of categories",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "categories retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Category"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Create a new category",
+                "description": "Creates a new category and returns the created resource",
+                "operationId": "createCategory",
+                "requestBody": {
+                    "description": "Category data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CategoryRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "category created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "category created successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/categories/{id}": {
+            "get": {
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Get category by ID",
+                "description": "Returns a single category",
+                "operationId": "getCategoryById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of category to return",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "category retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Update a category",
+                "description": "Updates a category and returns the updated resource",
+                "operationId": "updateCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of category to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Category data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CategoryRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CategoryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "category updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "category updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/categories/{id}": {
+            "delete": {
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Delete a category",
+                "description": "Deletes a category",
+                "operationId": "deleteCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of category to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "category deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "category deleted successfully"
                                         },
                                         "success": {
                                             "type": "boolean",
@@ -489,6 +834,88 @@
                     }
                 },
                 "type": "object"
+            },
+            "Category": {
+                "title": "Category DTO",
+                "description": "Data Transfer Object for Category",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 42
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "format": "ipv4",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "parent_id": {
+                        "type": "integer",
+                        "example": 42,
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "Example",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "CategoryRequest": {
+                "title": "Category Request DTO",
+                "description": "Request body untuk membuat atau mengupdate Category",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "format": "ipv4",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "parent_id": {
+                        "type": "integer",
+                        "example": "42",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
             }
         },
         "responses": {
@@ -572,8 +999,12 @@
     },
     "tags": [
         {
-            "name": "Authors",
-            "description": "API Endpoints for Author Management"
+            "name": "categories",
+            "description": "API Endpoints for Category Management"
+        },
+        {
+            "name": "authors",
+            "description": "authors"
         }
     ]
 }
