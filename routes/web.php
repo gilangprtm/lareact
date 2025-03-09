@@ -9,9 +9,7 @@ use Inertia\Inertia;
 
 // Public Routes
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'books' => app(BookController::class)->index()
-    ]);
+    return Inertia::render('welcome');
 })->name('home');
 
 // Categories
@@ -50,12 +48,13 @@ Route::get('/authors/{author}/edit', [AuthorController::class, 'edit'])->name('a
 Route::put('/authors/{author}', [AuthorController::class, 'update'])->name('authors.update');
 Route::delete('/authors/{author}', [AuthorController::class, 'destroy'])->name('authors.destroy');
 
-// Admin Routes
-Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('dashboard', function () {
+        return Inertia::render('dashboard');
     })->name('dashboard');
 });
+
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
