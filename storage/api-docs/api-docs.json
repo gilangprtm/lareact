@@ -21,22 +21,110 @@
                 "tags": [
                     "Authors"
                 ],
-                "summary": "Retrieve authors",
-                "description": "Get all authors.",
-                "operationId": "7221682a8b1f36e80fd12fd170950ca1",
+                "summary": "Retrieve all authors",
+                "description": "Get a paginated list of all authors with optional filters",
+                "operationId": "getAuthors",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for author name or email",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "load",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "description": "Field to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id"
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of authors",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/AuthorResource"
-                                    }
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Authors retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Author"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
                     }
                 }
             },
@@ -45,11 +133,17 @@
                     "Authors"
                 ],
                 "summary": "Create a new author",
-                "description": "Create a new author.",
-                "operationId": "be0a154ae928862480c88a67d7d2ed26",
+                "description": "Creates a new author and returns the created resource",
+                "operationId": "createAuthor",
                 "requestBody": {
+                    "description": "Author data",
                     "required": true,
                     "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthorRequest"
+                            }
+                        },
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/AuthorRequest"
@@ -63,10 +157,204 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/AuthorResource"
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Author created successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Author"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/authors/{id}": {
+            "get": {
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Get author by ID",
+                "description": "Returns a single author",
+                "operationId": "getAuthorById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of author to return",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Author retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Author"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Update an author",
+                "description": "Updates an author and returns the updated resource",
+                "operationId": "updateAuthor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of author to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Author data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthorRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AuthorRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Author updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Author updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Author"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Authors"
+                ],
+                "summary": "Delete an author",
+                "description": "Deletes an author",
+                "operationId": "deleteAuthor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of author to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Author deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Author deleted successfully"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
                     }
                 }
             }
@@ -74,12 +362,96 @@
     },
     "components": {
         "schemas": {
+            "Author": {
+                "title": "Author DTO",
+                "description": "Data Transfer Object untuk Author",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "john-doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "johndoe@example.com",
+                        "nullable": true
+                    },
+                    "bio": {
+                        "type": "string",
+                        "example": "A famous author.",
+                        "nullable": true
+                    },
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "1980-05-15",
+                        "nullable": true
+                    },
+                    "death_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "nationality": {
+                        "type": "string",
+                        "example": "American",
+                        "nullable": true
+                    },
+                    "website": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://johndoe.com",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "books_count": {
+                        "type": "integer",
+                        "example": 5,
+                        "nullable": true
+                    },
+                    "avatar": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/avatar.jpg",
+                        "nullable": true
+                    },
+                    "can_delete": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "age": {
+                        "type": "integer",
+                        "example": 43,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-03-09 14:25:36"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-03-10 08:15:22"
+                    }
+                },
+                "type": "object"
+            },
             "AuthorRequest": {
-                "title": "Author Request",
-                "description": "Request body for creating or updating an author",
-                "required": [
-                    "name"
-                ],
+                "title": "Author Request DTO",
+                "description": "Request body untuk membuat atau mengupdate author",
                 "properties": {
                     "name": {
                         "description": "Author's name",
@@ -101,105 +473,107 @@
                         "example": "A famous author.",
                         "nullable": true
                     },
-                    "photo": {
-                        "description": "Profile picture (image file, max 2MB)",
-                        "type": "string",
-                        "format": "binary",
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
-            "AuthorResource": {
-                "title": "Author Resource",
-                "description": "Author data response",
-                "properties": {
-                    "id": {
-                        "description": "Transform the resource into an array.",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "John Doe"
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "john-doe"
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "example": "johndoe@example.com"
-                    },
-                    "bio": {
-                        "type": "string",
-                        "example": "A famous author.",
-                        "nullable": true
-                    },
                     "birth_date": {
+                        "description": "Author's birth date",
                         "type": "string",
                         "format": "date",
                         "example": "1980-05-15",
                         "nullable": true
                     },
-                    "death_date": {
-                        "type": "string",
-                        "format": "date",
-                        "example": null,
-                        "nullable": true
-                    },
-                    "nationality": {
-                        "type": "string",
-                        "example": "American"
-                    },
                     "website": {
+                        "description": "Author's website URL",
                         "type": "string",
-                        "format": "url",
-                        "example": "https://johndoe.com",
+                        "format": "uri",
+                        "example": "https://example.com",
                         "nullable": true
-                    },
-                    "is_active": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "books_count": {
-                        "type": "integer",
-                        "example": 5
-                    },
-                    "avatar": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://example.com/avatar.jpg",
-                        "nullable": true
-                    },
-                    "can_delete": {
-                        "type": "boolean",
-                        "example": false
-                    },
-                    "age": {
-                        "type": "integer",
-                        "example": 43
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-03-09 14:25:36"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-03-10 08:15:22"
                     }
                 },
                 "type": "object"
+            }
+        },
+        "responses": {
+            "ValidationError": {
+                "description": "Validation errors",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "error"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Validation failed"
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "example": {
+                                        "field": [
+                                            "Error message"
+                                        ]
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "NotFound": {
+                "description": "Resource not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "error"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Resource not found"
+                                },
+                                "error": {
+                                    "type": "string",
+                                    "example": "Resource with ID 1 not found"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "ServerError": {
+                "description": "Internal server error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "status": {
+                                    "type": "string",
+                                    "example": "error"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Internal server error"
+                                },
+                                "error": {
+                                    "type": "string",
+                                    "example": "An unexpected error occurred"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
             }
         }
     },
     "tags": [
         {
             "name": "Authors",
-            "description": "Endpoints related to authors management"
+            "description": "API Endpoints for Author Management"
         }
     ]
 }

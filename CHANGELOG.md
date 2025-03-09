@@ -1,62 +1,30 @@
 # Changelog
 
-Dokumentasi perubahan dan progress pengembangan project Bukubook.
+Semua perubahan penting pada proyek ini akan didokumentasikan dalam file ini.
 
-## [Unreleased]
+## [1.1.0] - 2024-05-xx
 
-## [0.1.0] - 2024-03-14
+### Tambahan
 
-### Added
+- Implementasi DTO (Data Transfer Objects) untuk konsistensi data dan dokumentasi API
+- Penambahan generator kode untuk DTO dari model database:
+    - Command `make:dto`: Generate DTO dari model
+    - Command `make:api-classes`: Generate Request dan Resource dari DTO
+    - Command `make:api-controller`: Generate Controller API dengan dokumentasi
+- Pengembangan sistem dokumentasi API berbasis OpenAPI/Swagger
+- Refaktor controller API untuk menggunakan pola DRY dengan DTO
 
-- Database Structure
+### Perubahan
 
-    - Migration untuk categories table dengan fields: name, slug, description, parent_id, status
-    - Migration untuk publishers table dengan fields: name, email, phone, address, city, state, country, postal_code, website, logo_path, status
-    - Migration untuk books table dengan fields: title, isbn, category_id, publisher_id, publish_date, pages, description, status, price, is_featured, language
-    - Migration untuk authors table
-    - Migration untuk book_authors pivot table
-    - Migration untuk book_images table
-    - Migration untuk book_files table
-    - Foreign key constraints dengan ON DELETE RESTRICT
+- Perubahan struktur folder dengan penambahan direktori DTO
+- Pembaruan dokumentasi API dengan sistem otomatisasi berbasis DTO
+- Standardisasi response API menggunakan ApiController base class
 
-- Models & Enums
+## [1.0.0] - 2024-xx-xx
 
-    - Enum BookStatus: draft, published, out_of_stock
-    - Enum PublisherStatus: active, inactive, suspended
-    - Enum CategoryStatus: active, inactive
-    - Model relationships dan fillable fields
+### Tambahan
 
-- Service Layer
-
-    - BaseService dengan method CRUD standar
-    - BaseServiceInterface untuk contract
-    - Service classes untuk Category, Book, Publisher, Author
-    - Business validations (cek relasi sebelum delete)
-
-- Controllers
-
-    - Controllers di namespace App\Http\Controllers\DB
-    - Menggunakan service layer untuk operasi database
-    - Method standar: index, show, create, update, delete
-
-- Routes
-
-    - Web routes untuk aplikasi monolith dengan Inertia.js
-    - API routes dengan versioning (v1)
-    - Public dan protected routes
-    - Menggunakan DB controllers untuk kedua routes
-
-- Database Seeding
-    - Factories untuk Category, Publisher, Book, Author
-    - Seeder untuk generate data testing
-    - Relasi antar data dalam seeder
-
-### Changed
-
-- Perubahan dari getAllPaginated ke getPaginated di BaseService
-- Optimasi query di service layer dengan eager loading
-
-### Fixed
-
-- Foreign key constraints dari cascade ke restrict
-- Status field di publishers table
+- Initial release
+- CRUD dasar untuk entitas Book, Author, Publisher, dan Category
+- Implementasi API REST
+- Frontend dengan React dan Inertia.js

@@ -2,6 +2,15 @@
 
 Aplikasi manajemen buku menggunakan Laravel + React (Inertia.js)
 
+## Dokumentasi Generator API
+
+Proyek ini menggunakan pendekatan Data Transfer Object (DTO) untuk menghasilkan API yang konsisten dan terdokumentasi dengan baik. Lihat dokumentasi berikut untuk informasi lebih lanjut:
+
+- [Alur Kerja Generator API](docs/generator-workflow.md) - Penjelasan tentang alur kerja lengkap generator API
+- [Diagram Generator API](docs/generator-diagram.md) - Diagram visual alur penggunaan generator
+- [FAQ DTO dan Generator](docs/dto-faq.md) - Pertanyaan umum tentang pendekatan DTO
+- [Changelog](CHANGELOG.md) - Log perubahan dan pengembangan proyek
+
 ## Struktur Project
 
 ### Database
@@ -66,17 +75,41 @@ book_files
 
 ```
 app/
+├── Console/                    # Artisan commands
+│   └── Commands/
+│       ├── GenerateDtoFromModel.php
+│       ├── GenerateApiClassesFromDto.php
+│       └── GenerateApiController.php
+├── DTO/                        # Data Transfer Objects
+│   ├── BaseDto.php
+│   ├── AuthorDto.php
+│   ├── AuthorRequestDto.php
+│   └── ...
 ├── Http/
-│   └── Controllers/
-│       └── DB/                 # Controllers untuk business logic
-│           ├── BaseController
-│           ├── CategoryController
-│           ├── PublisherController
-│           ├── BookController
-│           └── AuthorController
+│   ├── Controllers/
+│   │   ├── ApiController.php   # Base API controller
+│   │   ├── DB/                 # Controllers untuk business logic
+│   │   │   ├── BaseController
+│   │   │   ├── CategoryController
+│   │   │   ├── PublisherController
+│   │   │   ├── BookController
+│   │   │   └── AuthorController
+│   │   └── API/                # API Controllers
+│   │       ├── AuthorController
+│   │       ├── BookController
+│   │       ├── CategoryController
+│   │       └── PublisherController
+│   ├── Requests/
+│   │   └── API/                # Form requests
+│   │       ├── AuthorRequest
+│   │       └── ...
+│   └── Resources/
+│       └── API/                # API Resources
+│           ├── AuthorResource
+│           └── ...
 ├── Models/                     # Eloquent models
 ├── Services/
-│   └── DB/                    # Service layer
+│   └── DB/                     # Service layer
 │       ├── BaseService
 │       ├── CategoryService
 │       ├── PublisherService
@@ -129,6 +162,68 @@ npm run dev
 ```
 
 ## API Documentation
+
+API diimplementasikan dengan menggunakan pola DRY (Don't Repeat Yourself) menggunakan Data Transfer Objects (DTO). Dokumentasi OpenAPI/Swagger otomatis dihasilkan dari skema DTO ini.
+
+### Mengakses Dokumentasi
+
+Dokumentasi API dapat diakses melalui endpoint:
+
+```
+/api/docs
+```
+
+### Generator Kode API
+
+Aplikasi ini dilengkapi dengan generator kode Artisan untuk mempercepat pengembangan API dengan prinsip DRY:
+
+#### 1. Menghasilkan DTO dari Model
+
+```bash
+php artisan make:dto Author
+```
+
+Perintah ini akan menghasilkan:
+
+- `app/DTO/AuthorDto.php`: Representasi data dengan anotasi OpenAPI
+- `app/DTO/AuthorRequestDto.php`: Definisi request body dengan validasi
+
+Options:
+
+- `--path=app/DTO`: Path untuk menyimpan file DTO (default: app/DTO)
+- `--force`: Timpa file yang sudah ada
+
+#### 2. Menghasilkan Form Request dan Resource
+
+```bash
+php artisan make:api-classes AuthorDto
+```
+
+Perintah ini akan menghasilkan:
+
+- `app/Http/Requests/API/AuthorRequest.php`: Form request yang menggunakan validasi dari DTO
+- `app/Http/Resources/API/AuthorResource.php`: Resource yang menggunakan DTO untuk transformasi
+
+Options:
+
+- `--path=app/Http`: Path dasar untuk kelas API (default: app/Http)
+- `--force`: Timpa file yang sudah ada
+
+#### 3. Menghasilkan Controller API
+
+```bash
+php artisan make:api-controller Author
+```
+
+Perintah ini akan menghasilkan:
+
+- `app/Http/Controllers/API/AuthorController.php`: Controller API lengkap dengan endpoint CRUD dan dokumentasi OpenAPI
+
+Options:
+
+- `--module=v1`: Nama modul API (contoh: v1 untuk /api/v1/)
+- `--path=app/Http/Controllers/API`: Path untuk menyimpan controller
+- `--force`: Timpa file yang sudah ada
 
 ### Public Endpoints
 
