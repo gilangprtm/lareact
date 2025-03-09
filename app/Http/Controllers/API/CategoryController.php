@@ -2,45 +2,37 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
 use App\Http\Controllers\DB\CategoryController as DBCategoryController;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Dedoc\Scramble\Attributes\QueryParameter;
+use Dedoc\Scramble\Attributes\BodyParameter;
 
-/**
- * @tags Categories
- * @group Category Management
- */
-class CategoryController extends Controller
+class CategoryController extends ApiController
 {
     public function __construct(
         protected DBCategoryController $dbController
     ) {}
 
-    /**
-     * Get a paginated list of categories with filtering options
-     * 
-     * Query parameters:
-     * - search: Search term for category name, slug, or description
-     * - page: Page number for pagination (default: 1)
-     * - load: Number of items per page (default: 10)
-     * - parent_id: Filter by parent category ID
-     * - status: Filter by status (active, inactive)
-     * - has_children: Filter categories that have children (true/false)
-     * - has_books: Filter categories that have books (true/false)
-     * - field: Field to sort by (default: id)
-     * - direction: Sort direction (asc or desc, default: desc)
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function index(Request $request): JsonResponse
     {
         try {
             // Forward all query parameters to the DB controller
-            $result = $this->dbController->index();
+            $params = $request->only([
+                'search',
+                'page',
+                'load',
+                'parent_id',
+                'status',
+                'has_children',
+                'has_books',
+                'field',
+                'direction'
+            ]);
+            $result = $this->dbController->index($params);
 
             // Structure the response with metadata
             return response()->json([
@@ -57,9 +49,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Get category details by ID
-     */
     public function show(int $id): JsonResponse
     {
         try {
@@ -78,17 +67,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Create a new category
-     * 
-     * Required fields:
-     * - name: Category name
-     * 
-     * Optional fields:
-     * - description: Category description
-     * - parent_id: Parent category ID
-     * - status: Category status (active, inactive)
-     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -113,15 +91,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Update an existing category
-     * 
-     * Optional fields:
-     * - name: Category name
-     * - description: Category description
-     * - parent_id: Parent category ID
-     * - status: Category status (active, inactive)
-     */
     public function update(Request $request, int $id): JsonResponse
     {
         try {
@@ -152,9 +121,7 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Delete a category
-     */
+
     public function destroy(int $id): JsonResponse
     {
         try {

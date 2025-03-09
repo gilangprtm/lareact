@@ -20,26 +20,22 @@ Route::prefix('v1')->group(function () {
     Route::get('authors', [AuthorController::class, 'index']);
     Route::get('authors/{id}', [AuthorController::class, 'show']);
 
-    // Protected routes
-    Route::middleware('auth:sanctum')->group(function () {
-        // Categories management
-        Route::post('categories', [CategoryController::class, 'store']);
-        Route::put('categories/{id}', [CategoryController::class, 'update']);
-        Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
+    Route::post('categories', [CategoryController::class, 'store']);
+    Route::put('categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
 
-        // Publishers management
-        Route::post('publishers', [PublisherController::class, 'store']);
-        Route::put('publishers/{id}', [PublisherController::class, 'update']);
-        Route::delete('publishers/{id}', [PublisherController::class, 'destroy']);
+    // Publishers management
+    Route::post('publishers', [PublisherController::class, 'store']);
+    Route::put('publishers/{id}', [PublisherController::class, 'update']);
+    Route::delete('publishers/{id}', [PublisherController::class, 'destroy']);
 
-        // Books management
-        Route::post('books', [BookController::class, 'store']);
-        Route::put('books/{id}', [BookController::class, 'update']);
-        Route::delete('books/{id}', [BookController::class, 'destroy']);
+    // Books management
+    Route::post('books', [BookController::class, 'store']);
+    Route::put('books/{id}', [BookController::class, 'update']);
+    Route::delete('books/{id}', [BookController::class, 'destroy']);
 
-        // Authors management
-        Route::post('authors', [AuthorController::class, 'store']);
-        Route::put('authors/{id}', [AuthorController::class, 'update']);
-        Route::delete('authors/{id}', [AuthorController::class, 'destroy']);
-    });
+    // Authors management
+    Route::post('authors', [AuthorController::class, 'store']);
+    Route::put('authors/{id}', [AuthorController::class, 'update']);
+    Route::delete('authors/{id}', [AuthorController::class, 'destroy']);
 });

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
 use App\Http\Controllers\DB\PublisherController as DBPublisherController;
 use App\Models\Publisher;
 use Illuminate\Http\JsonResponse;
@@ -11,36 +11,30 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @tags Publishers
- * @group Publisher Management
- */
-class PublisherController extends Controller
+
+class PublisherController extends ApiController
 {
     public function __construct(
         protected DBPublisherController $dbController
     ) {}
 
-    /**
-     * Get a paginated list of publishers with filtering options
-     * 
-     * Query parameters:
-     * - search: Search term for publisher name, email, phone, city, or country
-     * - page: Page number for pagination (default: 1)
-     * - load: Number of items per page (default: 10)
-     * - status: Filter by status (active, inactive)
-     * - city: Filter by city
-     * - state: Filter by state
-     * - country: Filter by country
-     * - has_books: Filter publishers that have books (true/false)
-     * - field: Field to sort by (default: id)
-     * - direction: Sort direction (asc or desc, default: desc)
-     */
     public function index(Request $request): JsonResponse
     {
         try {
             // Forward all query parameters to the DB controller
-            $result = $this->dbController->index();
+            $params = $request->only([
+                'search',
+                'page',
+                'load',
+                'status',
+                'city',
+                'state',
+                'country',
+                'has_books',
+                'field',
+                'direction'
+            ]);
+            $result = $this->dbController->index($params);
 
             // Structure the response with metadata
             return response()->json([
@@ -57,9 +51,7 @@ class PublisherController extends Controller
         }
     }
 
-    /**
-     * Get publisher details by ID
-     */
+
     public function show(int $id): JsonResponse
     {
         try {
@@ -78,27 +70,6 @@ class PublisherController extends Controller
         }
     }
 
-    /**
-     * Create a new publisher
-     * 
-     * Required fields:
-     * - name: Publisher's name
-     * 
-     * Optional fields:
-     * - email: Publisher's email
-     * - phone: Publisher's phone number
-     * - address: Publisher's address
-     * - city: Publisher's city
-     * - state: Publisher's state/province
-     * - country: Publisher's country
-     * - postal_code: Publisher's postal code
-     * - website: Publisher's website URL
-     * - logo: Publisher's logo (file upload)
-     * - status: Publisher's status (active, inactive)
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -147,22 +118,6 @@ class PublisherController extends Controller
         }
     }
 
-    /**
-     * Update an existing publisher
-     * 
-     * Optional fields:
-     * - name: Publisher's name
-     * - email: Publisher's email
-     * - phone: Publisher's phone number
-     * - address: Publisher's address
-     * - city: Publisher's city
-     * - state: Publisher's state/province
-     * - country: Publisher's country
-     * - postal_code: Publisher's postal code
-     * - website: Publisher's website URL
-     * - logo: Publisher's logo (file upload)
-     * - status: Publisher's status (active, inactive)
-     */
     public function update(Request $request, int $id): JsonResponse
     {
         try {
@@ -223,9 +178,6 @@ class PublisherController extends Controller
         }
     }
 
-    /**
-     * Delete a publisher
-     */
     public function destroy(int $id): JsonResponse
     {
         try {

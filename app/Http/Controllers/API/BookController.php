@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
 use App\Http\Controllers\DB\BookController as DBBookController;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
@@ -11,41 +11,19 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @tags Books
- * @group Book Management
- */
-class BookController extends Controller
+
+class BookController extends ApiController
 {
     public function __construct(
         protected DBBookController $dbController
     ) {}
 
-    /**
-     * Get a paginated list of books with filtering options
-     * 
-     * Query parameters:
-     * - search: Search term for book title, ISBN, or description
-     * - page: Page number for pagination (default: 1)
-     * - load: Number of items per page (default: 10)
-     * - category_id: Filter by category ID
-     * - publisher_id: Filter by publisher ID
-     * - status: Filter by book status (available, out_of_stock, coming_soon)
-     * - min_price: Filter by minimum price
-     * - max_price: Filter by maximum price
-     * - language: Filter by language
-     * - is_featured: Filter featured books (true/false)
-     * - field: Field to sort by (default: id)
-     * - direction: Sort direction (asc or desc, default: desc)
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function index(Request $request): JsonResponse
     {
         try {
             // Forward all query parameters to the DB controller
-            $result = $this->dbController->index();
+            $params = $request->only(['search', 'page', 'load']);
+            $result = $this->dbController->index($params);
 
             // Structure the response with metadata
             return response()->json([
@@ -62,9 +40,6 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Get book details by ID
-     */
     public function show(int $id): JsonResponse
     {
         try {
@@ -83,30 +58,6 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Create a new book
-     * 
-     * Required fields:
-     * - title: Book title
-     * - isbn: Book ISBN
-     * - category_id: Category ID
-     * - publisher_id: Publisher ID
-     * - publish_date: Publication date (YYYY-MM-DD)
-     * - pages: Number of pages
-     * - description: Book description
-     * - status: Book status (available, out_of_stock, coming_soon)
-     * - price: Book price
-     * - language: Book language
-     * - author_ids: Array of author IDs
-     * 
-     * Optional fields:
-     * - is_featured: Whether the book is featured (true/false)
-     * - images[]: Multiple book cover/promotional images (file uploads)
-     * - files[]: Multiple book-related files (e.g., sample chapters) (file uploads)
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -156,27 +107,6 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Update an existing book
-     * 
-     * Optional fields:
-     * - title: Book title
-     * - isbn: Book ISBN
-     * - category_id: Category ID
-     * - publisher_id: Publisher ID
-     * - publish_date: Publication date (YYYY-MM-DD)
-     * - pages: Number of pages
-     * - description: Book description
-     * - status: Book status (available, out_of_stock, coming_soon)
-     * - price: Book price
-     * - is_featured: Whether the book is featured (true/false)
-     * - language: Book language
-     * - author_ids: Array of author IDs
-     * - images[]: Multiple book cover/promotional images (file uploads)
-     * - files[]: Multiple book-related files (e.g., sample chapters) (file uploads)
-     * - delete_images[]: IDs of images to delete
-     * - delete_files[]: IDs of files to delete
-     */
     public function update(Request $request, int $id): JsonResponse
     {
         try {
@@ -245,9 +175,6 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Delete a book
-     */
     public function destroy(int $id): JsonResponse
     {
         try {
@@ -272,9 +199,7 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Handle uploading multiple images for a book
-     */
+
     private function handleImageUploads(Book $book, array $images): void
     {
         foreach ($images as $index => $image) {
@@ -300,9 +225,7 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Handle uploading multiple files for a book
-     */
+
     private function handleFileUploads(Book $book, array $files): void
     {
         foreach ($files as $file) {
@@ -333,9 +256,7 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Delete book images by ID
-     */
+
     private function deleteImages(Book $book, array $imageIds): void
     {
         $images = $book->images()->whereIn('id', $imageIds)->get();
@@ -349,9 +270,6 @@ class BookController extends Controller
         }
     }
 
-    /**
-     * Delete book files by ID
-     */
     private function deleteFiles(Book $book, array $fileIds): void
     {
         $files = $book->files()->whereIn('id', $fileIds)->get();
