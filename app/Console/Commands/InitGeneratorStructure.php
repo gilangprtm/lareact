@@ -20,6 +20,7 @@ class InitGeneratorStructure extends Command
         'app/Http/Requests/API',
         'app/Http/Requests/Traits',
         'app/Http/Resources/API',
+        'app/Services/Traits',
     ];
 
     private $baseFiles = [
@@ -27,9 +28,7 @@ class InitGeneratorStructure extends Command
         'app/Services/DB/BaseService.php' => 'BaseService.php.stub',
         'app/Services/DB/BaseServiceInterface.php' => 'BaseServiceInterface.php.stub',
         'app/Http/Controllers/ApiController.php' => 'ApiController.php.stub',
-        'app/Http/Controllers/DB/BaseController.php' => 'BaseController.php.stub',
-        'app/Http/Resources/API/BaseResource.php' => 'BaseResource.php.stub',
-        'app/Http/Requests/API/BaseApiRequest.php' => 'BaseApiRequest.php.stub',
+        'app/Services/Traits/HandlesFileUploads.php' => 'HandlesFileUploads.php.stub',
     ];
 
     public function handle()
@@ -105,8 +104,8 @@ class InitGeneratorStructure extends Command
             'GenerateApiController.php',
             'GenerateFullModuleFromModel.php',
             'GenerateServiceFromModel.php',
-            'GenerateDbControllerFromModel.php',
-            'GenerateWebControllerFromModel.php',
+            'GenerateDbControllerFromService.php',
+            'GenerateWebControllerFromDb.php',
             'GenerateRequestTraitFromDto.php',
             'GenerateBaseResourceFromDto.php',
         ];
