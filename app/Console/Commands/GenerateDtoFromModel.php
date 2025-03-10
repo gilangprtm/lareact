@@ -391,94 +391,86 @@ class GenerateDtoFromModel extends Command
     {
         $namespace = 'App\\DTO';
 
-        // Mempersiapkan import kelas yang diperlukan
-        $imports = ["namespace {$namespace};\n"];
-        $imports[] = "use {$fullModelName};\n";
-
-        // Tambahkan Str jika diperlukan (untuk slug)
-        if (isset($columns['slug']) && isset($columns['name'])) {
-            $imports[] = "use Illuminate\\Support\\Str;\n";
-        }
-
-        // Jika ada relasi, tambahkan import untuk model-model yang terkait
-        $additionalImports = [];
-        foreach ($relations as $relation) {
-            // Untuk model terkait, asumsikan namespace App\\Models
-            $relatedModel = "App\\Models\\{$relation['related']}";
-            // Hanya tambahkan import jika model berbeda dan belum diimport
-            if ($relatedModel !== $fullModelName && !in_array("use {$relatedModel};\n", $additionalImports)) {
-                $additionalImports[] = "use {$relatedModel};\n";
-            }
-        }
-
-        $imports = array_merge($imports, $additionalImports);
-
-        // Definisikan properti
+        // Define properties
         $properties = [];
         $examples = [
-            'id' => '1',
-            'string' => '"Example"',
-            'int' => '42',
-            'bool' => 'true',
-            'float' => '3.14',
-            'array' => '["item1", "item2"]',
+            'id' => 1,
+            'string' => 'Example text',
+            'int' => 42,
+            'bool' => true,
+            'float' => 3.14,
+            'array' => '{"key": "value"}',
         ];
 
-        // Kelompokkan properti berdasarkan jenis (timestamp, regular, relations)
-        $timestampProps = [];
-        $regularProps = [];
-        $idProp = null;
+        // Track file fields untuk menambahkan URL
+        $filePathFields = [];
 
         foreach ($columns as $name => $column) {
             $phpType = $column['phpType'];
             $nullable = $column['nullable'];
             $typeHint = $nullable ? "?{$phpType}" : $phpType;
-            $example = $examples[$phpType] ?? 'null';
+            $example = $examples[$phpType] ?? 'Example value';
             $format = $column['format'] ? ", format=\"{$column['format']}\"" : '';
             $nullableStr = $nullable ? ", nullable=true" : '';
 
-            $propStr = "    /**\n" .
-                "     * @OA\\Property(type=\"{$phpType}\", example={$example}{$format}{$nullableStr})\n" .
-                "     */\n" .
-                "    public {$typeHint} \${$name}" . ($nullable ? " = null" : "") . ";\n";
-
-            // Kelompokkan berdasarkan jenis untuk mengatur tata letak yang lebih baik
+            // Jika ini adalah id, handle secara khusus
             if ($name === 'id') {
-                $idProp = $propStr;
-            } elseif (in_array($name, ['created_at', 'updated_at', 'deleted_at'])) {
-                $timestampProps[] = $propStr;
+                $properties[] = "    /**\n" .
+                    "     * @OA\\Property(type=\"integer\", example=1)\n" .
+                    "     */\n" .
+                    "    public int \$id;\n";
             } else {
-                $regularProps[] = $propStr;
+                $properties[] = "    /**\n" .
+                    "     * @OA\\Property(type=\"{$phpType}\", example=\"{$example}\"{$format}{$nullableStr})\n" .
+                    "     */\n" .
+                    "    public {$typeHint} \${$name}" . ($nullable ? " = null" : "") . ";\n";
+            }
+
+            // Jika field adalah file path, tambahkan ke tracking
+            if ($this->isFilePath($name)) {
+                $filePathFields[] = $name;
+
+                // Tambahkan properti URL untuk file
+                $urlFieldName = $this->getFileFieldName($name) . '_url';
+                $properties[] = "    /**\n" .
+                    "     * @OA\\Property(type=\"string\", example=\"http://example.com/storage/{$name}\"{$nullableStr})\n" .
+                    "     */\n" .
+                    "    public ?string \${$urlFieldName} = null;\n";
             }
         }
 
-        // Gabungkan properti dalam urutan yang tepat: id, regular, timestamps
-        if ($idProp) {
-            $properties[] = $idProp;
+        // Add relationship properties
+        foreach ($relations as $relation => $type) {
+            if ($type === 'BelongsTo') {
+                $properties[] = "    /**\n" .
+                    "     * @OA\\Property(\n" .
+                    "     *     type=\"object\",\n" .
+                    "     *     @OA\\Property(property=\"id\", type=\"integer\"),\n" .
+                    "     *     @OA\\Property(property=\"name\", type=\"string\")\n" .
+                    "     * )\n" .
+                    "     */\n" .
+                    "    public ?object \${$relation} = null;\n";
+            } else {
+                $properties[] = "    /**\n" .
+                    "     * @OA\\Property(\n" .
+                    "     *     type=\"array\",\n" .
+                    "     *     @OA\\Items(\n" .
+                    "     *         type=\"object\",\n" .
+                    "     *         @OA\\Property(property=\"id\", type=\"integer\"),\n" .
+                    "     *         @OA\\Property(property=\"name\", type=\"string\")\n" .
+                    "     *     )\n" .
+                    "     */\n" .
+                    "    public ?array \${$relation} = null;\n";
+            }
         }
-        $properties = array_merge($properties, $regularProps, $timestampProps);
 
-        // Tambahkan properti relasi
-        $relationProps = [];
-        foreach ($relations as $name => $relation) {
-            $relatedType = $relation['isToMany'] ? "array" : "object";
-            $nullableStr = ", nullable=true";
+        // Generate fromModel method
+        $fromModelMethod = $this->generateFromModelMethod($modelName, $columns, $relations, $filePathFields);
 
-            $relationProps[] = "    /**\n" .
-                "     * @OA\\Property(type=\"{$relatedType}\"{$nullableStr}, description=\"{$relation['related']} {$relation['type']}\")\n" .
-                "     */\n" .
-                "    public ?{$relatedType} \${$name} = " . ($relation['isToMany'] ? "[]" : "null") . ";\n";
-        }
-
-        // Tambahkan properti relasi setelah properti reguler
-        $properties = array_merge($properties, $relationProps);
-
-        // Buat metode fromModel
-        $fromModelMethod = $this->generateFromModelMethod($modelName, $columns, $relations);
-
-        // Buat konten kelas
+        // Create class content
         $content = "<?php\n\n" .
-            implode("", $imports) . "\n" .
+            "namespace {$namespace};\n" .
+            "use {$fullModelName};\n\n" .
             "/**\n" .
             " * @OA\\Schema(\n" .
             " *     schema=\"{$modelName}\",\n" .
@@ -489,58 +481,17 @@ class GenerateDtoFromModel extends Command
             "class {$dtoName} extends BaseDto\n" .
             "{\n" .
             implode("\n", $properties) . "\n" .
-            $fromModelMethod .
+            $fromModelMethod . "\n" .
             "}\n";
 
         return $content;
     }
 
     /**
-     * Generate the 'fromModel' method
+     * Generate the fromModel method
      */
-    protected function generateFromModelMethod($modelName, $columns, $relations)
+    protected function generateFromModelMethod($modelName, $columns, $relations, $filePathFields = [])
     {
-        $body = "        \$dto = self::fromSource(\$model);\n";
-
-        // Add special handling for dates
-        $dateFields = [];
-        foreach ($columns as $name => $column) {
-            if (isset($column['format']) && in_array($column['format'], ['date', 'date-time'])) {
-                $dateFields[] = $name;
-            }
-        }
-
-        if (!empty($dateFields)) {
-            $body .= "\n        // Handle date fields\n";
-            foreach ($dateFields as $field) {
-                $body .= "        \$dto->{$field} = \$model->{$field} ? \$model->{$field}->format('Y-m-d" .
-                    (str_contains($columns[$field]['format'], 'time') ? " H:i:s" : "") . "') : null;\n";
-            }
-        }
-
-        // Add special handling for relations
-        if (!empty($relations)) {
-            $body .= "\n        // Handle relations\n";
-            foreach ($relations as $name => $relation) {
-                if ($relation['isToMany']) {
-                    $body .= "        \$dto->{$name} = \$model->{$name}->isNotEmpty() ? \$model->{$name}->toArray() : [];\n";
-                } else {
-                    $body .= "        \$dto->{$name} = \$model->{$name} ? \$model->{$name}->toArray() : null;\n";
-                }
-            }
-        }
-
-        // Custom computations based on column names
-        $hasSlug = isset($columns['slug']);
-        $hasName = isset($columns['name']);
-
-        if ($hasSlug && $hasName) {
-            $body .= "\n        // Ensure slug is set\n";
-            $body .= "        if (empty(\$dto->slug) && !empty(\$dto->name)) {\n";
-            $body .= "            \$dto->slug = \\Illuminate\\Support\\Str::slug(\$dto->name);\n";
-            $body .= "        }\n";
-        }
-
         $method = "    /**\n" .
             "     * Create a DTO from a {$modelName} model\n" .
             "     *\n" .
@@ -549,11 +500,182 @@ class GenerateDtoFromModel extends Command
             "     */\n" .
             "    public static function fromModel({$modelName} \$model): self\n" .
             "    {\n" .
-            $body .
-            "        return \$dto;\n" .
-            "    }\n";
+            "        \$dto = self::fromSource(\$model);\n\n";
+
+        // Handle date fields
+        $hasDateFields = false;
+        foreach ($columns as $name => $column) {
+            if ($column['format'] === 'date' || $column['format'] === 'date-time') {
+                if (!$hasDateFields) {
+                    $method .= "        // Handle date fields\n";
+                    $hasDateFields = true;
+                }
+                $format = $column['format'] === 'date' ? 'Y-m-d' : 'Y-m-d H:i:s';
+                $method .= "        \$dto->{$name} = \$model->{$name} ? \$model->{$name}->format('{$format}') : null;\n";
+            }
+        }
+
+        // Handle file paths and generate URLs
+        if (!empty($filePathFields)) {
+            $method .= "\n        // Generate file URLs\n";
+            foreach ($filePathFields as $pathField) {
+                $urlField = $this->getFileFieldName($pathField) . '_url';
+                $method .= "        \$dto->{$urlField} = \$model->{$pathField} ? asset('storage/' . \$model->{$pathField}) : null;\n";
+            }
+        }
+
+        // Handle relations
+        if (!empty($relations)) {
+            $method .= "\n        // Handle relationships\n";
+            foreach ($relations as $relation => $type) {
+                $method .= "        if (\$model->relationLoaded('{$relation}')) {\n";
+                if ($type === 'BelongsTo') {
+                    $method .= "            \$dto->{$relation} = \$model->{$relation} ? (object) [\n" .
+                        "                'id' => \$model->{$relation}->id,\n" .
+                        "                'name' => \$model->{$relation}->name\n" .
+                        "            ] : null;\n";
+                } else {
+                    $method .= "            \$dto->{$relation} = \$model->{$relation}->map(function (\$item) {\n" .
+                        "                return [\n" .
+                        "                    'id' => \$item->id,\n" .
+                        "                    'name' => \$item->name\n" .
+                        "                ];\n" .
+                        "            })->toArray();\n";
+                }
+                $method .= "        }\n";
+            }
+        }
+
+        $method .= "        return \$dto;\n" .
+            "    }";
 
         return $method;
+    }
+
+    /**
+     * Mendeteksi apakah kolom merupakan path file
+     */
+    protected function isFilePath($columnName)
+    {
+        return Str::endsWith($columnName, '_path');
+    }
+
+    /**
+     * Mendapatkan nama field file upload dari nama kolom path
+     */
+    protected function getFileFieldName($pathColumnName)
+    {
+        // Mengubah xxx_path menjadi xxx
+        return Str::replaceLast('_path', '', $pathColumnName);
+    }
+
+    /**
+     * Menebak tipe file berdasarkan nama kolom
+     */
+    protected function guessFileType($columnName)
+    {
+        if (
+            Str::contains($columnName, 'image') ||
+            Str::contains($columnName, 'photo') ||
+            Str::contains($columnName, 'picture') ||
+            Str::contains($columnName, 'logo') ||
+            Str::contains($columnName, 'avatar') ||
+            Str::contains($columnName, 'thumbnail')
+        ) {
+            return 'image';
+        }
+
+        if (
+            Str::contains($columnName, 'document') ||
+            Str::contains($columnName, 'doc') ||
+            Str::contains($columnName, 'pdf')
+        ) {
+            return 'document';
+        }
+
+        return 'file';
+    }
+
+    /**
+     * Generates file field documentation and validation rules
+     */
+    protected function getFileFieldDetails($pathColumnName)
+    {
+        $fileFieldName = $this->getFileFieldName($pathColumnName);
+        $fileType = $this->guessFileType($fileFieldName);
+
+        $property = [];
+        $rules = [];
+
+        // Properti untuk OpenAPI
+        if ($fileType === 'image') {
+            $property = [
+                'name' => $fileFieldName,
+                'docBlock' => "    /**\n" .
+                    "     * @OA\\Property(\n" .
+                    "     *     property=\"{$fileFieldName}\",\n" .
+                    "     *     type=\"string\",\n" .
+                    "     *     format=\"binary\",\n" .
+                    "     *     description=\"Image file (JPEG, PNG, or GIF)\",\n" .
+                    "     *     nullable=true\n" .
+                    "     * )\n" .
+                    "     */\n",
+                'declaration' => "    public \${$fileFieldName} = null;\n",
+            ];
+
+            $rules = [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:2048'
+            ];
+        } elseif ($fileType === 'document') {
+            $property = [
+                'name' => $fileFieldName,
+                'docBlock' => "    /**\n" .
+                    "     * @OA\\Property(\n" .
+                    "     *     property=\"{$fileFieldName}\",\n" .
+                    "     *     type=\"string\",\n" .
+                    "     *     format=\"binary\",\n" .
+                    "     *     description=\"Document file (PDF, DOC, DOCX, etc.)\",\n" .
+                    "     *     nullable=true\n" .
+                    "     * )\n" .
+                    "     */\n",
+                'declaration' => "    public \${$fileFieldName} = null;\n",
+            ];
+
+            $rules = [
+                'nullable',
+                'file',
+                'mimes:pdf,doc,docx,txt,xls,xlsx,csv',
+                'max:10240'
+            ];
+        } else {
+            $property = [
+                'name' => $fileFieldName,
+                'docBlock' => "    /**\n" .
+                    "     * @OA\\Property(\n" .
+                    "     *     property=\"{$fileFieldName}\",\n" .
+                    "     *     type=\"string\",\n" .
+                    "     *     format=\"binary\",\n" .
+                    "     *     description=\"File upload\",\n" .
+                    "     *     nullable=true\n" .
+                    "     * )\n" .
+                    "     */\n",
+                'declaration' => "    public \${$fileFieldName} = null;\n",
+            ];
+
+            $rules = [
+                'nullable',
+                'file',
+                'max:10240'
+            ];
+        }
+
+        return [
+            'property' => $property,
+            'rules' => $rules
+        ];
     }
 
     /**
@@ -565,6 +687,7 @@ class GenerateDtoFromModel extends Command
 
         // Define properties and validation rules
         $properties = [];
+        $propertyDeclarations = [];
         $rules = [];
         $examples = [
             'id' => 1,
@@ -575,20 +698,44 @@ class GenerateDtoFromModel extends Command
             'array' => '{"key": "value"}',
         ];
 
+        // Track file fields untuk menghindari duplikasi
+        $fileFields = [];
+
         foreach ($columns as $name => $column) {
             // Skip primary key and timestamps for request
             if (in_array($name, ['id', 'created_at', 'updated_at', 'deleted_at'])) {
                 continue;
             }
 
+            // Cek apakah ini adalah file path
+            if ($this->isFilePath($name)) {
+                $fileFieldName = $this->getFileFieldName($name);
+
+                // Jika sudah ada field file untuk path ini, skip
+                if (in_array($fileFieldName, $fileFields)) {
+                    continue;
+                }
+
+                // Tambahkan ke tracking
+                $fileFields[] = $fileFieldName;
+
+                // Dapatkan informasi field file
+                $fileDetails = $this->getFileFieldDetails($name);
+                $propertyDeclarations[] = $fileDetails['property']['docBlock'] . $fileDetails['property']['declaration'];
+                $rules[$fileDetails['property']['name']] = $fileDetails['rules'];
+
+                // Skip properti _path karena diganti dengan field file
+                continue;
+            }
+
             $phpType = $column['phpType'];
             $nullable = $column['nullable'];
             $typeHint = $nullable ? "?{$phpType}" : $phpType;
-            $example = $examples[$phpType] ?? '';
+            $example = $examples[$phpType] ?? 'Example text';
             $format = $column['format'] ? ", format=\"{$column['format']}\"" : '';
             $nullableStr = $nullable ? ", nullable=true" : '';
 
-            $properties[] = "    /**\n" .
+            $propertyDeclarations[] = "    /**\n" .
                 "     * @OA\\Property(type=\"{$phpType}\", example=\"{$example}\"{$format}{$nullableStr})\n" .
                 "     */\n" .
                 "    public {$typeHint} \${$name}" . ($nullable ? " = null" : "") . ";\n";
@@ -653,7 +800,7 @@ class GenerateDtoFromModel extends Command
             " */\n" .
             "class {$requestDtoName} extends BaseDto\n" .
             "{\n" .
-            implode("\n", $properties) . "\n" .
+            implode("\n", $propertyDeclarations) . "\n" .
             "    /**\n" .
             "     * Creates validation rules based on the DTO properties\n" .
             "     */\n" .

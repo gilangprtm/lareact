@@ -15,7 +15,17 @@ class PublisherResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Pastikan relasi dimuat sebelum transformasi
+        $this->resource->loadMissing(['books:id,title,publisher_id']);
+
         // Menggunakan DTO untuk transformasi dan dokumentasi
-        return PublisherDto::fromModel($this->resource)->toArray();
+        $publisherDto = PublisherDto::fromModel($this->resource);
+
+        // Memastikan logo_url dibuat dengan benar
+        if ($this->resource->logo_path) {
+            $publisherDto->logo_url = asset('storage/' . $this->resource->logo_path);
+        }
+
+        return $publisherDto->toArray();
     }
 }

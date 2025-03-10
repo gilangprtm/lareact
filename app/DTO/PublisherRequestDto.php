@@ -57,9 +57,15 @@ class PublisherRequestDto extends BaseDto
     public ?string $website = null;
 
     /**
-     * @OA\Property(type="string", example="Example text", nullable=true)
+     * @OA\Property(
+     *     property="logo",
+     *     type="string",
+     *     format="binary",
+     *     description="Image file (JPEG, PNG, or GIF)",
+     *     nullable=true
+     * )
      */
-    public ?string $logo_path = null;
+    public $logo = null;
 
     /**
      * @OA\Property(type="string", example="Example text", nullable=true)
@@ -81,7 +87,7 @@ class PublisherRequestDto extends BaseDto
             'country' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'string', 'max:255'],
-            'logo_path' => ['nullable', 'string', 'max:255'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
             'status' => ['nullable', 'string', 'max:255'],
         ];
     }
