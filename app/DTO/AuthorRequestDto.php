@@ -6,35 +6,36 @@ namespace App\DTO;
  * @OA\Schema(
  *     schema="AuthorRequest",
  *     title="Author Request DTO",
- *     description="Request body untuk membuat atau mengupdate author"
+ *     description="Request body untuk membuat atau mengupdate Author"
  * )
  */
 class AuthorRequestDto extends BaseDto
 {
     /**
-     * @OA\Property(type="string", example="John Doe", description="Author's name", maxLength=255)
+     * @OA\Property(type="string", example="John Doe", nullable=false)
      */
-    public string $name;
+    public ?string $name = null;
 
     /**
-     * @OA\Property(type="string", format="email", nullable=true, example="johndoe@example.com", description="Author's email", maxLength=255)
+     * @OA\Property(type="string", example="john@example.com", format="email", nullable=true)
      */
     public ?string $email = null;
 
     /**
-     * @OA\Property(type="string", nullable=true, example="A famous author.", description="Author's biography")
+     * @OA\Property(type="string", example="Author of several bestselling novels.", nullable=true)
      */
     public ?string $bio = null;
 
     /**
-     * @OA\Property(type="string", format="date", nullable=true, example="1980-05-15", description="Author's birth date")
+     * @OA\Property(
+     *     property="photo",
+     *     type="string",
+     *     format="binary",
+     *     description="Author photo (JPEG, PNG, or GIF)",
+     *     nullable=true
+     * )
      */
-    public ?string $birth_date = null;
-
-    /**
-     * @OA\Property(type="string", format="uri", nullable=true, example="https://example.com", description="Author's website URL")
-     */
-    public ?string $website = null;
+    public $photo = null;
 
     /**
      * Creates validation rules based on the DTO properties
@@ -43,10 +44,9 @@ class AuthorRequestDto extends BaseDto
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'string', 'max:255', 'email'],
             'bio' => ['nullable', 'string'],
-            'birth_date' => ['nullable', 'date'],
-            'website' => ['nullable', 'url'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ];
     }
 }

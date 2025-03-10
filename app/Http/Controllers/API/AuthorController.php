@@ -11,12 +11,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * @OA\Tag(
- *     name="Authors",
+ *     name="authors",
  *     description="API Endpoints for Author Management"
  * )
  */
@@ -33,12 +32,12 @@ class AuthorController extends ApiController
      *     path="/api/v1/authors",
      *     summary="Retrieve all authors",
      *     description="Get a paginated list of all authors with optional filters",
-     *     operationId="getAuthors",
+     *     operationId="getauthors",
      *     tags={"authors"},
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
-     *         description="Search term for author name or email",
+     *         description="Search term",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
@@ -75,7 +74,7 @@ class AuthorController extends ApiController
      *         description="List of authors",
      *         @OA\JsonContent(
      *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Authors retrieved successfully"),
+     *             @OA\Property(property="message", type="string", example="authors retrieved successfully"),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
@@ -100,9 +99,8 @@ class AuthorController extends ApiController
             $params = $request->only(['search', 'page', 'load', 'field', 'direction']);
             $result = $this->dbController->index($params);
 
-            // Wrapping results in resource collection automatically
             return response()->json(
-                $this->successResponse($result, 'Authors retrieved successfully')
+                $this->successResponse($result, 'authors retrieved successfully')
             );
         } catch (\Exception $e) {
             return response()->json(
@@ -133,7 +131,7 @@ class AuthorController extends ApiController
      *         description="Successful operation",
      *         @OA\JsonContent(
      *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Author retrieved successfully"),
+     *             @OA\Property(property="message", type="string", example="author retrieved successfully"),
      *             @OA\Property(
      *                 property="data",
      *                 ref="#/components/schemas/Author"
@@ -149,11 +147,11 @@ class AuthorController extends ApiController
         try {
             $result = $this->dbController->find($id);
             return response()->json(
-                $this->successResponse(new AuthorResource($result), 'Author retrieved successfully')
+                $this->successResponse(new AuthorResource($result), 'author retrieved successfully')
             );
         } catch (\Exception $e) {
             return response()->json(
-                $this->errorResponse('Author not found', $e->getMessage()),
+                $this->errorResponse('author not found', $e->getMessage()),
                 404
             );
         }
@@ -179,10 +177,10 @@ class AuthorController extends ApiController
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Author created successfully",
+     *         description="author created successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Author created successfully"),
+     *             @OA\Property(property="message", type="string", example="author created successfully"),
      *             @OA\Property(
      *                 property="data",
      *                 ref="#/components/schemas/Author"
@@ -196,33 +194,14 @@ class AuthorController extends ApiController
     public function store(AuthorRequest $request): JsonResponse
     {
         try {
-            $data = $request->except('photo');
-            $dto = $request->toDto();
+            // Get the validated data from the request
+            $data = $request->validated();
 
-            // Handle photo upload if present
-            if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
-                $photo = $request->file('photo');
-
-                // Validate the image
-                $validator = Validator::make(['photo' => $photo], [
-                    'photo' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-                ]);
-
-                if ($validator->fails()) {
-                    return response()->json(
-                        $this->errorResponse('Invalid photo file', $validator->errors()),
-                        422
-                    );
-                }
-
-                // Store the file
-                $path = $photo->store('authors/photos', 'public');
-                $data['photo_path'] = $path;
-            }
-
+            // Service layer sudah menangani file handling
             $result = $this->dbController->create($data);
+
             return response()->json(
-                $this->successResponse(new AuthorResource($result), 'Author created successfully'),
+                $this->successResponse(new AuthorResource($result), 'author created successfully'),
                 201
             );
         } catch (ValidationException $e) {
@@ -265,10 +244,10 @@ class AuthorController extends ApiController
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Author updated successfully",
+     *         description="author updated successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Author updated successfully"),
+     *             @OA\Property(property="message", type="string", example="author updated successfully"),
      *             @OA\Property(
      *                 property="data",
      *                 ref="#/components/schemas/Author"
@@ -283,65 +262,35 @@ class AuthorController extends ApiController
     public function update(AuthorRequest $request, int $id): JsonResponse
     {
         try {
-            $data = $request->except('photo');
-            $dto = $request->toDto();
+            // Get the validated data from the request
+            $data = $request->validated();
 
-            // Handle photo upload if present
-            if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
-                $photo = $request->file('photo');
-
-                // Validate the image
-                $validator = Validator::make(['photo' => $photo], [
-                    'photo' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-                ]);
-
-                if ($validator->fails()) {
-                    return response()->json(
-                        $this->errorResponse('Invalid photo file', $validator->errors()),
-                        422
-                    );
-                }
-
-                // Delete old photo if exists
-                $author = $this->dbController->find($id);
-                if ($author->photo_path) {
-                    Storage::disk('public')->delete($author->photo_path);
-                }
-
-                // Store the new file
-                $path = $photo->store('authors/photos', 'public');
-                $data['photo_path'] = $path;
-            }
-
+            // Service layer sudah menangani file handling
             $result = $this->dbController->update($data, $id);
+
             return response()->json(
-                $this->successResponse(new AuthorResource($result), 'Author updated successfully')
+                $this->successResponse(new AuthorResource($result), 'author updated successfully')
             );
         } catch (ValidationException $e) {
             return response()->json(
                 $this->errorResponse('Validation failed', $e->errors()),
                 422
             );
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(
-                $this->errorResponse('Author not found', $e->getMessage()),
-                404
-            );
         } catch (\Exception $e) {
             return response()->json(
                 $this->errorResponse('Failed to update author', $e->getMessage()),
-                500
+                $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500
             );
         }
     }
 
     /**
-     * Delete an author.
+     * Delete a author.
      *
      * @OA\Delete(
      *     path="/api/v1/authors/{id}",
-     *     summary="Delete an author",
-     *     description="Deletes an author",
+     *     summary="Delete a author",
+     *     description="Deletes a author",
      *     operationId="deleteAuthor",
      *     tags={"authors"},
      *     @OA\Parameter(
@@ -353,10 +302,10 @@ class AuthorController extends ApiController
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Author deleted successfully",
+     *         description="author deleted successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Author deleted successfully"),
+     *             @OA\Property(property="message", type="string", example="author deleted successfully"),
      *             @OA\Property(property="success", type="boolean", example=true)
      *         )
      *     ),
@@ -367,21 +316,13 @@ class AuthorController extends ApiController
     public function destroy(int $id): JsonResponse
     {
         try {
-            // Get the author to delete their photo if needed
-            $author = $this->dbController->find($id);
-
-            // Delete the author's photo if it exists
-            if ($author->photo_path) {
-                Storage::disk('public')->delete($author->photo_path);
-            }
-
             $result = $this->dbController->delete($id);
             return response()->json(
-                $this->successResponse(['success' => $result], 'Author deleted successfully')
+                $this->successResponse(['success' => $result], 'author deleted successfully')
             );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(
-                $this->errorResponse('Author not found', $e->getMessage()),
+                $this->errorResponse('author not found', $e->getMessage()),
                 404
             );
         } catch (\Exception $e) {

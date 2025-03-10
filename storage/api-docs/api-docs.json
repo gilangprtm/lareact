@@ -23,12 +23,12 @@
                 ],
                 "summary": "Retrieve all authors",
                 "description": "Get a paginated list of all authors with optional filters",
-                "operationId": "getAuthors",
+                "operationId": "getauthors",
                 "parameters": [
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search term for author name or email",
+                        "description": "Search term",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -92,7 +92,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Authors retrieved successfully"
+                                            "example": "authors retrieved successfully"
                                         },
                                         "data": {
                                             "properties": {
@@ -153,7 +153,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Author created successfully",
+                        "description": "author created successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -164,7 +164,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Author created successfully"
+                                            "example": "author created successfully"
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/Author"
@@ -217,7 +217,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Author retrieved successfully"
+                                            "example": "author retrieved successfully"
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/Author"
@@ -273,7 +273,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Author updated successfully",
+                        "description": "author updated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -284,7 +284,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Author updated successfully"
+                                            "example": "author updated successfully"
                                         },
                                         "data": {
                                             "$ref": "#/components/schemas/Author"
@@ -310,8 +310,8 @@
                 "tags": [
                     "authors"
                 ],
-                "summary": "Delete an author",
-                "description": "Deletes an author",
+                "summary": "Delete a author",
+                "description": "Deletes a author",
                 "operationId": "deleteAuthor",
                 "parameters": [
                     {
@@ -327,7 +327,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Author deleted successfully",
+                        "description": "author deleted successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -338,7 +338,350 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Author deleted successfully"
+                                            "example": "author deleted successfully"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/books": {
+            "get": {
+                "tags": [
+                    "books"
+                ],
+                "summary": "Retrieve all books",
+                "description": "Get a paginated list of all books with optional filters",
+                "operationId": "getbooks",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "load",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "description": "Field to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id"
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of books",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "books retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Book"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "books"
+                ],
+                "summary": "Create a new book",
+                "description": "Creates a new book and returns the created resource",
+                "operationId": "createBook",
+                "requestBody": {
+                    "description": "Book data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "book created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "book created successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Book"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/books/{id}": {
+            "get": {
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get book by ID",
+                "description": "Returns a single book",
+                "operationId": "getBookById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of book to return",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "book retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Book"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "books"
+                ],
+                "summary": "Update a book",
+                "description": "Updates a book and returns the updated resource",
+                "operationId": "updateBook",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of book to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Book data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "book updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "book updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Book"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "books"
+                ],
+                "summary": "Delete a book",
+                "description": "Deletes a book",
+                "operationId": "deleteBook",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of book to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "book deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "book deleted successfully"
                                         },
                                         "success": {
                                             "type": "boolean",
@@ -648,9 +991,7 @@
                         "$ref": "#/components/responses/ServerError"
                     }
                 }
-            }
-        },
-        "/api/categories/{id}": {
+            },
             "delete": {
                 "tags": [
                     "categories"
@@ -709,127 +1050,358 @@
         "schemas": {
             "Author": {
                 "title": "Author DTO",
-                "description": "Data Transfer Object untuk Author",
+                "description": "Data Transfer Object for Author",
                 "properties": {
                     "id": {
                         "type": "integer",
-                        "example": 1
+                        "example": 42
                     },
                     "name": {
                         "type": "string",
-                        "example": "John Doe"
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "john-doe"
+                        "example": "John Doe",
+                        "nullable": true
                     },
                     "email": {
                         "type": "string",
                         "format": "email",
-                        "example": "johndoe@example.com",
+                        "example": "john@example.com",
                         "nullable": true
                     },
                     "bio": {
                         "type": "string",
-                        "example": "A famous author.",
+                        "example": "Author of several bestselling novels.",
                         "nullable": true
                     },
-                    "birth_date": {
+                    "photo_path": {
                         "type": "string",
-                        "format": "date",
-                        "example": "1980-05-15",
+                        "example": "authors/abc123.jpg",
                         "nullable": true
                     },
-                    "death_date": {
+                    "photo_url": {
                         "type": "string",
-                        "format": "date",
-                        "example": null,
-                        "nullable": true
-                    },
-                    "nationality": {
-                        "type": "string",
-                        "example": "American",
-                        "nullable": true
-                    },
-                    "website": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://johndoe.com",
-                        "nullable": true
-                    },
-                    "is_active": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "books_count": {
-                        "type": "integer",
-                        "example": 5,
-                        "nullable": true
-                    },
-                    "avatar": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://example.com/avatar.jpg",
-                        "nullable": true
-                    },
-                    "can_delete": {
-                        "type": "boolean",
-                        "example": false
-                    },
-                    "age": {
-                        "type": "integer",
-                        "example": 43,
+                        "example": "http://example.com/storage/authors/abc123.jpg",
                         "nullable": true
                     },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
-                        "example": "2024-03-09 14:25:36"
+                        "example": "2023-01-15 14:30:45",
+                        "nullable": true
                     },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time",
-                        "example": "2024-03-10 08:15:22"
+                        "example": "2023-02-20 09:15:30",
+                        "nullable": true
                     }
                 },
                 "type": "object"
             },
             "AuthorRequest": {
                 "title": "Author Request DTO",
-                "description": "Request body untuk membuat atau mengupdate author",
+                "description": "Request body untuk membuat atau mengupdate Author",
                 "properties": {
                     "name": {
-                        "description": "Author's name",
                         "type": "string",
-                        "maxLength": 255,
-                        "example": "John Doe"
+                        "example": "John Doe",
+                        "nullable": false
                     },
                     "email": {
-                        "description": "Author's email",
                         "type": "string",
                         "format": "email",
-                        "maxLength": 255,
-                        "example": "johndoe@example.com",
+                        "example": "john@example.com",
                         "nullable": true
                     },
                     "bio": {
-                        "description": "Author's biography",
                         "type": "string",
-                        "example": "A famous author.",
+                        "example": "Author of several bestselling novels.",
                         "nullable": true
                     },
-                    "birth_date": {
-                        "description": "Author's birth date",
+                    "photo": {
+                        "description": "Author photo (JPEG, PNG, or GIF)",
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Book": {
+                "title": "Book DTO",
+                "description": "Data Transfer Object for Book",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "The Great Gatsby",
+                        "nullable": true
+                    },
+                    "isbn": {
+                        "type": "string",
+                        "example": "978-3-16-148410-0",
+                        "nullable": true
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "publisher_id": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "publish_date": {
                         "type": "string",
                         "format": "date",
-                        "example": "1980-05-15",
+                        "example": "2023-01-15",
                         "nullable": true
                     },
-                    "website": {
-                        "description": "Author's website URL",
+                    "pages": {
+                        "type": "integer",
+                        "example": 320,
+                        "nullable": true
+                    },
+                    "description": {
                         "type": "string",
-                        "format": "uri",
-                        "example": "https://example.com",
+                        "example": "A classic novel about the American Dream",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "published",
+                        "nullable": true
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 29.99,
+                        "nullable": true
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "example": true,
+                        "nullable": true
+                    },
+                    "language": {
+                        "type": "string",
+                        "example": "en",
+                        "nullable": true
+                    },
+                    "authors": {
+                        "description": "Authors of the book",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "example": "F. Scott Fitzgerald"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "nullable": true
+                    },
+                    "category": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Fiction"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "publisher": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Penguin Books"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "images": {
+                        "description": "Images of the book",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "image_path": {
+                                    "type": "string",
+                                    "example": "books/images/cover.jpg"
+                                },
+                                "image_url": {
+                                    "type": "string",
+                                    "example": "http://example.com/storage/books/images/cover.jpg"
+                                },
+                                "image_type": {
+                                    "type": "string",
+                                    "example": "cover"
+                                },
+                                "sort_order": {
+                                    "type": "integer",
+                                    "example": 0
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "nullable": true
+                    },
+                    "files": {
+                        "description": "Files associated with the book",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "file_path": {
+                                    "type": "string",
+                                    "example": "books/files/sample.pdf"
+                                },
+                                "file_url": {
+                                    "type": "string",
+                                    "example": "http://example.com/storage/books/files/sample.pdf"
+                                },
+                                "file_type": {
+                                    "type": "string",
+                                    "example": "pdf"
+                                },
+                                "file_name": {
+                                    "type": "string",
+                                    "example": "Sample Chapter.pdf"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-01-15 14:30:45",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-02-20 09:15:30",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "BookRequest": {
+                "title": "Book Request DTO",
+                "description": "Request body untuk membuat atau mengupdate Book",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "example": "The Great Gatsby",
+                        "nullable": false
+                    },
+                    "isbn": {
+                        "type": "string",
+                        "example": "978-3-16-148410-0",
+                        "nullable": true
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "publisher_id": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "publish_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2023-01-15",
+                        "nullable": true
+                    },
+                    "pages": {
+                        "type": "integer",
+                        "example": 320,
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "A classic novel about the American Dream",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "published",
+                        "nullable": true
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 29.99,
+                        "nullable": true
+                    },
+                    "is_featured": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "language": {
+                        "type": "string",
+                        "example": "en",
+                        "nullable": true
+                    },
+                    "author_ids": {
+                        "description": "IDs of authors associated with the book",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "nullable": true
+                    },
+                    "images": {
+                        "description": "Book images (cover and previews)",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "binary"
+                        },
+                        "nullable": true
+                    },
+                    "files": {
+                        "description": "Book files (PDF, EPUB, etc.)",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "binary"
+                        },
                         "nullable": true
                     }
                 },
@@ -999,12 +1571,16 @@
     },
     "tags": [
         {
-            "name": "categories",
-            "description": "API Endpoints for Category Management"
+            "name": "authors",
+            "description": "API Endpoints for Author Management"
         },
         {
-            "name": "authors",
-            "description": "authors"
+            "name": "books",
+            "description": "API Endpoints for Book Management"
+        },
+        {
+            "name": "categories",
+            "description": "API Endpoints for Category Management"
         }
     ]
 }

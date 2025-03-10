@@ -16,6 +16,13 @@ class AuthorResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Menggunakan DTO untuk transformasi dan dokumentasi
-        return AuthorDto::fromAuthor($this->resource)->toArray();
+        $authorDto = AuthorDto::fromModel($this->resource);
+
+        // Memastikan photo_url dibuat dengan benar
+        if ($this->resource->photo_path) {
+            $authorDto->photo_url = asset('storage/' . $this->resource->photo_path);
+        }
+
+        return $authorDto->toArray();
     }
 }

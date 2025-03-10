@@ -295,7 +295,7 @@ class CategoryController extends ApiController
      * Delete a category.
      *
      * @OA\Delete(
-     *     path="/api/categories/{id}",
+     *     path="/api/v1/categories/{id}",
      *     summary="Delete a category",
      *     description="Deletes a category",
      *     operationId="deleteCategory",

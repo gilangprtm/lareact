@@ -56,23 +56,75 @@ class GenerateApiDocs extends Command
             return $url;
         })->toArray();
 
+        // Debug info
+        $this->info("Available API routes:");
+        foreach ($apiRoutes as $name => $path) {
+            $this->line("  {$name} => {$path}");
+        }
+
+        // Get endpoint path patterns (without version prefix)
+        $pathPatterns = [];
+        foreach ($apiRoutes as $routeName => $path) {
+            // Extract the endpoint pattern by removing prefix like /api/v1/
+            $segments = explode('/', trim($path, '/'));
+            if (count($segments) >= 3 && $segments[0] === 'api') {
+                // Skip version and form a basic pattern
+                array_shift($segments); // remove "api"
+                array_shift($segments); // remove version
+                $pattern = '/api/' . implode('/', $segments);
+                $pathPatterns[$pattern] = $path;
+            }
+        }
+
+        // Debug path patterns
+        $this->info("Path patterns mapping:");
+        foreach ($pathPatterns as $pattern => $path) {
+            $this->line("  {$pattern} => {$path}");
+        }
+
         // Get all paths from the API documentation
         if (isset($apiDoc['paths'])) {
             $paths = $apiDoc['paths'];
             $newPaths = [];
 
-            // Loop through all paths and check if we have a named route
+            // Loop through all paths and check if we have a matching pattern
             foreach ($paths as $path => $pathData) {
                 $routeName = $this->findRouteNameForPath($path, $apiRoutes);
 
+                // Direct match by route name
                 if ($routeName) {
-                    // We found a route, update the path
                     $newPath = $apiRoutes[$routeName];
-                    $this->info("Replacing: $path with $newPath");
+                    $this->info("Replacing via route name: {$path} with {$newPath}");
                     $newPaths[$newPath] = $pathData;
-                } else {
-                    // Keep the original path
-                    $newPaths[$path] = $pathData;
+                }
+                // Try pattern matching
+                elseif (isset($pathPatterns[$path])) {
+                    $newPath = $pathPatterns[$path];
+                    $this->info("Replacing via pattern match: {$path} with {$newPath}");
+                    $newPaths[$newPath] = $pathData;
+                }
+                // Try pattern matching with parameter variations
+                else {
+                    $foundMatch = false;
+
+                    foreach ($pathPatterns as $pattern => $targetPath) {
+                        // Replace variables with regex pattern for matching
+                        $patternRegex = preg_replace('/{([^}]+)}/', '([^/]+)', $pattern);
+                        $patternRegex = '#^' . $patternRegex . '$#';
+
+                        if (preg_match($patternRegex, $path)) {
+                            $this->info("Replacing via regex: {$path} with {$targetPath}");
+                            $newPaths[$targetPath] = $pathData;
+                            $foundMatch = true;
+                            break;
+                        }
+                    }
+
+                    if (!$foundMatch) {
+                        // Keep the original path if no match found
+                        $this->warn("No matching route found for path: {$path}");
+                        $newPaths[$path] = $pathData;
+                    }
                 }
             }
 

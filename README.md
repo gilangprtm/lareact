@@ -55,7 +55,10 @@ books
 
 authors
   ├── id
-  └── ...
+  ├── name
+  ├── email
+  ├── bio
+  └── photo_path
 
 book_authors (pivot)
   ├── book_id (fk)
@@ -64,12 +67,17 @@ book_authors (pivot)
 book_images
   ├── id
   ├── book_id (fk)
-  └── ...
+  ├── image_path
+  ├── image_type
+  └── sort_order
 
 book_files
   ├── id
   ├── book_id (fk)
-  └── ...
+  ├── file_path
+  ├── file_type
+  ├── file_name
+  └── description (nullable)
 ```
 
 ### Architecture

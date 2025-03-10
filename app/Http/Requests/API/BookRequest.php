@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\API;
 
-use App\DTO\AuthorRequestDto;
+use App\DTO\BookRequestDto;
 use Illuminate\Foundation\Http\FormRequest;
 
-class AuthorRequest extends FormRequest
+class BookRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,14 +23,14 @@ class AuthorRequest extends FormRequest
     public function rules(): array
     {
         // Menggunakan rules dari DTO
-        return AuthorRequestDto::rules();
+        return BookRequestDto::rules();
     }
     
     /**
      * Convert validated input to DTO
      */
-    public function toDto(): AuthorRequestDto
+    public function toDto(): BookRequestDto
     {
-        return AuthorRequestDto::fromSource($this->validated());
+        return BookRequestDto::fromSource($this->validated());
     }
 }

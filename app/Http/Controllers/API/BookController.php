@@ -4,282 +4,332 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\DB\BookController as DBBookController;
+use App\Http\Requests\API\BookRequest;
+use App\Http\Resources\API\BookResource;
 use App\Models\Book;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 
-
+/**
+ * @OA\Tag(
+ *     name="books",
+ *     description="API Endpoints for Book Management"
+ * )
+ */
 class BookController extends ApiController
 {
     public function __construct(
         protected DBBookController $dbController
     ) {}
 
+    /**
+     * Get all books.
+     *
+     * @OA\Get(
+     *     path="/api/v1/books",
+     *     summary="Retrieve all books",
+     *     description="Get a paginated list of all books with optional filters",
+     *     operationId="getbooks",
+     *     tags={"books"},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search term",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="load",
+     *         in="query",
+     *         description="Items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=10)
+     *     ),
+     *     @OA\Parameter(
+     *         name="field",
+     *         in="query",
+     *         description="Field to sort by",
+     *         required=false,
+     *         @OA\Schema(type="string", default="id")
+     *     ),
+     *     @OA\Parameter(
+     *         name="direction",
+     *         in="query",
+     *         description="Sort direction",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, default="desc")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of books",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="books retrieved successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Book")
+     *                 ),
+     *                 @OA\Property(property="total", type="integer", example=15),
+     *                 @OA\Property(property="per_page", type="integer", example=10)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=500, ref="#/components/responses/ServerError")
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         try {
             // Forward all query parameters to the DB controller
-            $params = $request->only(['search', 'page', 'load']);
+            $params = $request->only(['search', 'page', 'load', 'field', 'direction']);
             $result = $this->dbController->index($params);
 
-            // Structure the response with metadata
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Books retrieved successfully',
-                'data' => $result
-            ]);
+            return response()->json(
+                $this->successResponse($result, 'books retrieved successfully')
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to retrieve books',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(
+                $this->errorResponse('Failed to retrieve books', $e->getMessage()),
+                500
+            );
         }
     }
 
+    /**
+     * Get a specific book by ID.
+     *
+     * @OA\Get(
+     *     path="/api/v1/books/{id}",
+     *     summary="Get book by ID",
+     *     description="Returns a single book",
+     *     operationId="getBookById",
+     *     tags={"books"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of book to return",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="book retrieved successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 ref="#/components/schemas/Book"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, ref="#/components/responses/NotFound"),
+     *     @OA\Response(response=500, ref="#/components/responses/ServerError")
+     * )
+     */
     public function show(int $id): JsonResponse
     {
         try {
             $result = $this->dbController->find($id);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Book retrieved successfully',
-                'data' => $result
-            ]);
+            return response()->json(
+                $this->successResponse(new BookResource($result), 'book retrieved successfully')
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Book not found',
-                'error' => $e->getMessage()
-            ], 404);
+            return response()->json(
+                $this->errorResponse('book not found', $e->getMessage()),
+                404
+            );
         }
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * Create a new book.
+     *
+     * @OA\Post(
+     *     path="/api/v1/books",
+     *     summary="Create a new book",
+     *     description="Creates a new book and returns the created resource",
+     *     operationId="createBook",
+     *     tags={"books"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Book data",
+     *         @OA\JsonContent(ref="#/components/schemas/BookRequest"),
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(ref="#/components/schemas/BookRequest")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="book created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="book created successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 ref="#/components/schemas/Book"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=422, ref="#/components/responses/ValidationError"),
+     *     @OA\Response(response=500, ref="#/components/responses/ServerError")
+     * )
+     */
+    public function store(BookRequest $request): JsonResponse
     {
         try {
-            // Get basic book data
-            $data = $request->except(['images', 'files', 'author_ids']);
+            // Get the validated data from the request
+            $data = $request->validated();
 
-            // Validate and process author IDs
-            if ($request->has('author_ids')) {
-                $data['author_ids'] = is_array($request->author_ids)
-                    ? $request->author_ids
-                    : json_decode($request->author_ids, true);
-            }
+            // Service layer sudah menangani file handling
+            $result = $this->dbController->create($data);
 
-            // Create the book first
-            $book = $this->dbController->create($data);
-
-            // Handle image uploads if present
-            if ($request->hasFile('images')) {
-                $this->handleImageUploads($book, $request->file('images'));
-            }
-
-            // Handle file uploads if present
-            if ($request->hasFile('files')) {
-                $this->handleFileUploads($book, $request->file('files'));
-            }
-
-            // Get the updated book with relationships
-            $result = $this->dbController->find($book->id);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Book created successfully',
-                'data' => $result
-            ], 201);
+            return response()->json(
+                $this->successResponse(new BookResource($result), 'book created successfully'),
+                201
+            );
         } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+            return response()->json(
+                $this->errorResponse('Validation failed', $e->errors()),
+                422
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create book',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(
+                $this->errorResponse('Failed to create book', $e->getMessage()),
+                500
+            );
         }
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    /**
+     * Update an existing book.
+     *
+     * @OA\Put(
+     *     path="/api/v1/books/{id}",
+     *     summary="Update a book",
+     *     description="Updates a book and returns the updated resource",
+     *     operationId="updateBook",
+     *     tags={"books"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of book to update",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Book data",
+     *         @OA\JsonContent(ref="#/components/schemas/BookRequest"),
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(ref="#/components/schemas/BookRequest")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="book updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="book updated successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 ref="#/components/schemas/Book"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, ref="#/components/responses/NotFound"),
+     *     @OA\Response(response=422, ref="#/components/responses/ValidationError"),
+     *     @OA\Response(response=500, ref="#/components/responses/ServerError")
+     * )
+     */
+    public function update(BookRequest $request, int $id): JsonResponse
     {
         try {
-            // Get the book
-            $book = $this->dbController->find($id);
+            // Get the validated data from the request
+            $data = $request->validated();
 
-            // Get basic book data
-            $data = $request->except(['images', 'files', 'author_ids', 'delete_images', 'delete_files']);
+            // Service layer sudah menangani file handling
+            $result = $this->dbController->update($data, $id);
 
-            // Validate and process author IDs
-            if ($request->has('author_ids')) {
-                $data['author_ids'] = is_array($request->author_ids)
-                    ? $request->author_ids
-                    : json_decode($request->author_ids, true);
-            }
-
-            // Update the book
-            $this->dbController->update($data, $id);
-
-            // Handle image uploads if present
-            if ($request->hasFile('images')) {
-                $this->handleImageUploads($book, $request->file('images'));
-            }
-
-            // Handle file uploads if present
-            if ($request->hasFile('files')) {
-                $this->handleFileUploads($book, $request->file('files'));
-            }
-
-            // Delete images if requested
-            if ($request->has('delete_images')) {
-                $this->deleteImages($book, $request->delete_images);
-            }
-
-            // Delete files if requested
-            if ($request->has('delete_files')) {
-                $this->deleteFiles($book, $request->delete_files);
-            }
-
-            // Get the updated book with relationships
-            $result = $this->dbController->find($id);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Book updated successfully',
-                'data' => $result
-            ]);
+            return response()->json(
+                $this->successResponse(new BookResource($result), 'book updated successfully')
+            );
         } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Book not found',
-                'error' => $e->getMessage()
-            ], 404);
+            return response()->json(
+                $this->errorResponse('Validation failed', $e->errors()),
+                422
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to update book',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(
+                $this->errorResponse('Failed to update book', $e->getMessage()),
+                $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500
+            );
         }
     }
 
+    /**
+     * Delete a book.
+     *
+     * @OA\Delete(
+     *     path="/api/v1/books/{id}",
+     *     summary="Delete a book",
+     *     description="Deletes a book",
+     *     operationId="deleteBook",
+     *     tags={"books"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of book to delete",
+     *         required=true,
+     *         @OA\Schema(type="integer", format="int64")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="book deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="book deleted successfully"),
+     *             @OA\Property(property="success", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(response=404, ref="#/components/responses/NotFound"),
+     *     @OA\Response(response=500, ref="#/components/responses/ServerError")
+     * )
+     */
     public function destroy(int $id): JsonResponse
     {
         try {
             $result = $this->dbController->delete($id);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Book deleted successfully',
-                'success' => $result
-            ]);
+            return response()->json(
+                $this->successResponse(['success' => $result], 'book deleted successfully')
+            );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Book not found',
-                'error' => $e->getMessage()
-            ], 404);
+            return response()->json(
+                $this->errorResponse('book not found', $e->getMessage()),
+                404
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to delete book',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-
-    private function handleImageUploads(Book $book, array $images): void
-    {
-        foreach ($images as $index => $image) {
-            if ($image->isValid()) {
-                // Validate the image
-                $validator = Validator::make(['image' => $image], [
-                    'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-                ]);
-
-                if ($validator->fails()) {
-                    continue; // Skip invalid images
-                }
-
-                // Store the file
-                $path = $image->store('books/' . $book->id . '/images', 'public');
-
-                // Create the book image record
-                $book->images()->create([
-                    'path' => $path,
-                    'sort_order' => $index, // Use the array index as sort order
-                ]);
-            }
-        }
-    }
-
-
-    private function handleFileUploads(Book $book, array $files): void
-    {
-        foreach ($files as $file) {
-            if ($file->isValid()) {
-                // Validate the file
-                $validator = Validator::make(['file' => $file], [
-                    'file' => 'file|mimes:pdf,doc,docx,txt|max:10240', // 10MB max
-                ]);
-
-                if ($validator->fails()) {
-                    continue; // Skip invalid files
-                }
-
-                // Store the file
-                $path = $file->store('books/' . $book->id . '/files', 'public');
-
-                // Get the original file name
-                $originalName = $file->getClientOriginalName();
-
-                // Create the book file record
-                $book->files()->create([
-                    'path' => $path,
-                    'name' => $originalName,
-                    'type' => $file->getClientMimeType(),
-                    'size' => $file->getSize(),
-                ]);
-            }
-        }
-    }
-
-
-    private function deleteImages(Book $book, array $imageIds): void
-    {
-        $images = $book->images()->whereIn('id', $imageIds)->get();
-
-        foreach ($images as $image) {
-            // Delete the file
-            Storage::disk('public')->delete($image->path);
-
-            // Delete the record
-            $image->delete();
-        }
-    }
-
-    private function deleteFiles(Book $book, array $fileIds): void
-    {
-        $files = $book->files()->whereIn('id', $fileIds)->get();
-
-        foreach ($files as $file) {
-            // Delete the file
-            Storage::disk('public')->delete($file->path);
-
-            // Delete the record
-            $file->delete();
+            return response()->json(
+                $this->errorResponse('Failed to delete book', $e->getMessage()),
+                500
+            );
         }
     }
 }
