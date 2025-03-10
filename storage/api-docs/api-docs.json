@@ -1044,6 +1044,349 @@
                     }
                 }
             }
+        },
+        "/api/v1/publishers": {
+            "get": {
+                "tags": [
+                    "publishers"
+                ],
+                "summary": "Retrieve all publishers",
+                "description": "Get a paginated list of all publishers with optional filters",
+                "operationId": "getpublishers",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "load",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "field",
+                        "in": "query",
+                        "description": "Field to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id"
+                        }
+                    },
+                    {
+                        "name": "direction",
+                        "in": "query",
+                        "description": "Sort direction",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of publishers",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "publishers retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Publisher"
+                                                    }
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 15
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "publishers"
+                ],
+                "summary": "Create a new publisher",
+                "description": "Creates a new publisher and returns the created resource",
+                "operationId": "createPublisher",
+                "requestBody": {
+                    "description": "Publisher data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublisherRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublisherRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "publisher created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "publisher created successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Publisher"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/publishers/{id}": {
+            "get": {
+                "tags": [
+                    "publishers"
+                ],
+                "summary": "Get publisher by ID",
+                "description": "Returns a single publisher",
+                "operationId": "getPublisherById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of publisher to return",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "publisher retrieved successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Publisher"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "publishers"
+                ],
+                "summary": "Update a publisher",
+                "description": "Updates a publisher and returns the updated resource",
+                "operationId": "updatePublisher",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of publisher to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Publisher data",
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublisherRequest"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublisherRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "publisher updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "publisher updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Publisher"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "publishers"
+                ],
+                "summary": "Delete a publisher",
+                "description": "Deletes a publisher",
+                "operationId": "deletePublisher",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of publisher to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "publisher deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "publisher deleted successfully"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -1488,6 +1831,148 @@
                     }
                 },
                 "type": "object"
+            },
+            "Publisher": {
+                "title": "Publisher DTO",
+                "description": "Data Transfer Object for Publisher",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 42
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "state": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "country": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "postal_code": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "website": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "logo_path": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "Example",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "Example",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PublisherRequest": {
+                "title": "Publisher Request DTO",
+                "description": "Request body untuk membuat atau mengupdate Publisher",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "state": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "country": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "postal_code": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "website": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "logo_path": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "Example text",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
             }
         },
         "responses": {
@@ -1581,6 +2066,10 @@
         {
             "name": "categories",
             "description": "API Endpoints for Category Management"
+        },
+        {
+            "name": "publishers",
+            "description": "API Endpoints for Publisher Management"
         }
     ]
 }
