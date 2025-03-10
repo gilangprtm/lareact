@@ -10,9 +10,11 @@ use ReflectionClass;
 class GenerateWebControllerFromDb extends Command
 {
     protected $signature = 'make:web-controller {model : The model class name}
-                          {--inertia : Generate controller for Inertia.js (default)}
-                          {--blade : Generate controller for Blade templates instead of Inertia}
-                          {--prefix= : Route prefix for resource routes (default is kebab case plural of model)}
+                          {--blade : Use Blade templates instead of Inertia.js}
+                          {--prefix= : Route prefix for resource routes}
+                          {--simple : Use simple architecture}
+                          {--standard : Use standard architecture (default)}
+                          {--advanced : Use advanced architecture with repository}
                           {--force : Overwrite existing files}';
 
     protected $description = 'Generate Web Controller from existing DB Controller';
@@ -28,6 +30,13 @@ class GenerateWebControllerFromDb extends Command
         $useInertia = !$this->option('blade');
         $routePrefix = $this->option('prefix');
         $force = $this->option('force');
+
+        // Determine architecture mode
+        $simple = $this->option('simple');
+        $advanced = $this->option('advanced');
+        $mode = $this->getArchitectureMode($simple, $advanced);
+
+        $this->info("Using {$mode} architecture mode");
 
         // Check if model exists
         try {
@@ -300,5 +309,19 @@ class GenerateWebControllerFromDb extends Command
         // Simpler alternative using resource route
         $this->line("\n// Or more simply:");
         $this->line("Route::resource('{$routePrefix}', {$controllerName}::class);");
+    }
+
+    /**
+     * Get the architecture mode based on options
+     */
+    protected function getArchitectureMode($simple, $advanced)
+    {
+        if ($simple) {
+            return 'simple';
+        } elseif ($advanced) {
+            return 'advanced';
+        } else {
+            return 'standard';
+        }
     }
 }

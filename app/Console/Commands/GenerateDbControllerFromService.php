@@ -11,6 +11,9 @@ class GenerateDbControllerFromService extends Command
 {
     protected $signature = 'make:db-controller {model : The model class name}
                            {--web : Generate Web Controller too}
+                           {--simple : Use simple architecture}
+                           {--standard : Use standard architecture (default)}
+                           {--advanced : Use advanced architecture with repository}
                            {--force : Overwrite existing files}';
 
     protected $description = 'Generate DB Controller, Request, and Resource from a Model and Service';
@@ -25,6 +28,13 @@ class GenerateDbControllerFromService extends Command
         $modelName = $this->argument('model');
         $generateWeb = $this->option('web');
         $force = $this->option('force');
+
+        // Determine architecture mode
+        $simple = $this->option('simple');
+        $advanced = $this->option('advanced');
+        $mode = $this->getArchitectureMode($simple, $advanced);
+
+        $this->info("Using {$mode} architecture mode");
 
         // Check if model exists
         try {
@@ -444,5 +454,19 @@ class GenerateDbControllerFromService extends Command
             "}\n";
 
         return $content;
+    }
+
+    /**
+     * Get the architecture mode based on options
+     */
+    protected function getArchitectureMode($simple, $advanced)
+    {
+        if ($simple) {
+            return 'simple';
+        } elseif ($advanced) {
+            return 'advanced';
+        } else {
+            return 'standard';
+        }
     }
 }

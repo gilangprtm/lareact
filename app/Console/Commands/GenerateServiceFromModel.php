@@ -545,4 +545,88 @@ class GenerateServiceFromModel extends Command
             $this->info($bindingCode);
         }
     }
+
+    protected function generateAdvancedServiceContent($modelName, $fullModelName, $repositoryName, $repositoryInterfaceName)
+    {
+        $namespace = 'App\\Services\\DB\\Providers';
+        $serviceName = "{$modelName}Service";
+        $serviceInterfaceName = "{$modelName}ServiceInterface";
+        $serviceInterfaceNamespace = 'App\\Services\\DB\\Contracts';
+        $repositoryNamespace = 'App\\Repositories\\Contracts';
+        $modelVariable = Str::camel($modelName);
+        $repositoryVariable = Str::camel($repositoryName);
+
+        return "<?php\n\n" .
+            "namespace {$namespace};\n\n" .
+            "use {$fullModelName};\n" .
+            "use {$serviceInterfaceNamespace}\\{$serviceInterfaceName};\n" .
+            "use {$repositoryNamespace}\\{$repositoryInterfaceName};\n" .
+            "use App\\Repositories\\Eloquent\\{$repositoryName};\n" .
+            "use App\\DTO\\{$modelName}Dto;\n" .
+            "use App\\Services\\Traits\\HandleFileUploads;\n" .
+            "use Illuminate\\Database\\Eloquent\\Collection;\n" .
+            "use Illuminate\\Database\\Eloquent\\Model;\n" .
+            "use Illuminate\\Pagination\\LengthAwarePaginator;\n\n" .
+            "/**\n" .
+            " * {$modelName} Service handles business logic for {$modelName} operations\n" .
+            " * This is an advanced service implementation with repository pattern for complex operations\n" .
+            " */\n" .
+            "class {$serviceName} extends BaseService implements {$serviceInterfaceName}\n" .
+            "{\n" .
+            "    protected {$modelName}Repository \$repository;\n\n" .
+            "    public function __construct({$modelName}Repository \$repository)\n" .
+            "    {\n" .
+            "        \$this->repository = \$repository;\n" .
+            "        parent::__construct();\n" .
+            "    }\n\n" .
+            "    protected function getModel(): Model\n" .
+            "    {\n" .
+            "        return new {$modelName}();\n" .
+            "    }\n\n" .
+            "    protected function getFilterableFields(): array\n" .
+            "    {\n" .
+            "        return ['search'];\n" .
+            "    }\n\n" .
+            "    protected function beforeCreate(array &\$data): void\n" .
+            "    {\n" .
+            "        // Implement beforeCreate logic\n" .
+            "    }\n\n" .
+            "    protected function afterCreate(Model \$model, array \$data): void\n" .
+            "    {\n" .
+            "        // Implement afterCreate logic\n" .
+            "    }\n\n" .
+            "    protected function beforeUpdate(array &\$data, \$id): void\n" .
+            "    {\n" .
+            "        // Implement beforeUpdate logic\n" .
+            "    }\n\n" .
+            "    protected function afterUpdate(Model \$model, array \$data): void\n" .
+            "    {\n" .
+            "        // Implement afterUpdate logic\n" .
+            "    }\n\n" .
+            "    protected function beforeDelete(\$id): void\n" .
+            "    {\n" .
+            "        // Implement beforeDelete logic\n" .
+            "    }\n\n" .
+            "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+            "    {\n" .
+            "        return \$this->getPaginated(\n" .
+            "            relations: []\n" .
+            "        );\n" .
+            "    }\n\n" .
+            "    /**\n" .
+            "     * Get {$modelName}s with caching\n" .
+            "     */\n" .
+            "    public function getCached{$modelName}s(): array\n" .
+            "    {\n" .
+            "        return \$this->repository->getCached{$modelName}s();\n" .
+            "    }\n\n" .
+            "    /**\n" .
+            "     * Clear {$modelName} cache\n" .
+            "     */\n" .
+            "    public function clearCache(): void\n" .
+            "    {\n" .
+            "        \$this->repository->clearCache();\n" .
+            "    }\n" .
+            "}\n";
+    }
 }

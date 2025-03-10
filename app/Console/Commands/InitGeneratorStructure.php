@@ -108,6 +108,7 @@ class InitGeneratorStructure extends Command
             'GenerateWebControllerFromDb.php',
             'GenerateRequestTraitFromDto.php',
             'GenerateBaseResourceFromDto.php',
+            'GenerateRepositoryFromModel.php',
         ];
 
         foreach ($generatorCommands as $command) {
