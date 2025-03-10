@@ -50,8 +50,9 @@ class CategoryController extends Controller
                 'state' => $this->getState(),
             ]);
         } catch (Throwable $e) {
-            flashMessage(MessageType::ERROR->message('Kategori', $e->getMessage()), 'error');
-            return back();
+            return back()
+                ->withInput()
+                ->with('error', MessageType::ERROR->message('Kategori', $e->getMessage()));
         }
     }
 

@@ -1,0 +1,548 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use ReflectionClass;
+
+class GenerateServiceFromModel extends Command
+{
+    protected $signature = 'make:service {model : The model class name}
+                           {--simple : Generate simplified service implementation}
+                           {--advanced : Generate advanced service with repository pattern}
+                           {--force : Overwrite existing files}';
+
+    protected $description = 'Generate a Service class from a Laravel model with flexibility for different complexity levels';
+
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle()
+    {
+        $modelName = $this->argument('model');
+        $force = $this->option('force');
+        $simple = $this->option('simple');
+        $advanced = $this->option('advanced');
+
+        // Check if both simple and advanced options are used together
+        if ($simple && $advanced) {
+            $this->error("Cannot use both --simple and --advanced flags together!");
+            return 1;
+        }
+
+        // Check if model exists
+        try {
+            // Handle both formats: "App\Models\User" or just "User"
+            $fullModelName = $modelName;
+            if (!Str::contains($modelName, '\\')) {
+                $fullModelName = "App\\Models\\{$modelName}";
+            }
+
+            // Verify the model exists
+            if (!class_exists($fullModelName)) {
+                $this->error("Model {$fullModelName} does not exist!");
+                return 1;
+            }
+
+            // Get the class name without namespace
+            $reflection = new ReflectionClass($fullModelName);
+            $modelShortName = $reflection->getShortName();
+
+            // Create service name
+            $serviceName = "{$modelShortName}Service";
+            $serviceInterfaceName = "{$modelShortName}ServiceInterface";
+            $dtoName = "{$modelShortName}Dto";
+            $requestDtoName = "{$modelShortName}RequestDto";
+
+            // Check if DTO exists
+            $dtoPath = app_path("DTO/{$dtoName}.php");
+            $requestDtoPath = app_path("DTO/{$requestDtoName}.php");
+
+            if (!File::exists($dtoPath)) {
+                $this->warn("DTO {$dtoName} does not exist. Consider generating it first with 'make:dto {$modelName}'");
+            }
+
+            if (!File::exists($requestDtoPath)) {
+                $this->warn("Request DTO {$requestDtoName} does not exist. Consider generating it first with 'make:dto {$modelName}'");
+            }
+
+            // Get model instance to analyze
+            $model = app($fullModelName);
+
+            // Check for file fields by analyzing Request DTO if it exists
+            $fileFields = [];
+            $hasFileUpload = false;
+
+            if (File::exists($requestDtoPath)) {
+                // Include the file to use the class
+                require_once($requestDtoPath);
+                $requestDtoClass = "App\\DTO\\{$requestDtoName}";
+
+                if (class_exists($requestDtoClass) && method_exists($requestDtoClass, 'rules')) {
+                    $rules = $requestDtoClass::rules();
+
+                    // Check for file validation rules
+                    foreach ($rules as $field => $fieldRules) {
+                        if (is_array($fieldRules)) {
+                            $isFileField = false;
+                            foreach ($fieldRules as $rule) {
+                                if (in_array($rule, ['file', 'image', 'mimes'])) {
+                                    $isFileField = true;
+                                    break;
+                                }
+                            }
+
+                            if ($isFileField) {
+                                $fileFields[] = $field;
+                                $hasFileUpload = true;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // As a fallback, check for columns with "_path" in the name
+                $table = $model->getTable();
+                if (Schema::hasTable($table)) {
+                    $columns = Schema::getColumnListing($table);
+                    foreach ($columns as $column) {
+                        if (Str::endsWith($column, '_path')) {
+                            $fieldName = Str::replaceLast('_path', '', $column);
+                            $fileFields[] = $fieldName;
+                            $hasFileUpload = true;
+                        }
+                    }
+                }
+            }
+
+            // Create directories if they don't exist
+            $contractsDir = app_path('Services/DB/Contracts');
+            $providersDir = app_path('Services/DB/Providers');
+
+            if (!File::isDirectory($contractsDir)) {
+                File::makeDirectory($contractsDir, 0755, true);
+            }
+
+            if (!File::isDirectory($providersDir)) {
+                File::makeDirectory($providersDir, 0755, true);
+            }
+
+            // Generate interface file
+            $interfacePath = "{$contractsDir}/{$serviceInterfaceName}.php";
+
+            if (File::exists($interfacePath) && !$force) {
+                if (!$this->confirm("The interface {$serviceInterfaceName} already exists. Do you want to overwrite it?")) {
+                    $this->info("Interface generation cancelled.");
+                } else {
+                    // Generate interface content
+                    $interfaceContent = $this->generateInterfaceContent($modelShortName, $serviceInterfaceName);
+
+                    // Write interface file
+                    File::put($interfacePath, $interfaceContent);
+                    $this->info("Interface {$serviceInterfaceName} generated successfully at {$interfacePath}");
+                }
+            } else {
+                // Generate interface content
+                $interfaceContent = $this->generateInterfaceContent($modelShortName, $serviceInterfaceName);
+
+                // Write interface file
+                File::put($interfacePath, $interfaceContent);
+                $this->info("Interface {$serviceInterfaceName} generated successfully at {$interfacePath}");
+            }
+
+            // Generate service file
+            $servicePath = "{$providersDir}/{$serviceName}.php";
+
+            if (File::exists($servicePath) && !$force) {
+                if (!$this->confirm("The service {$serviceName} already exists. Do you want to overwrite it?")) {
+                    $this->info("Service generation cancelled.");
+                    return 0;
+                }
+            }
+
+            // Generate service content
+            $serviceContent = $this->generateServiceContent($modelShortName, $fullModelName, $hasFileUpload, $fileFields);
+
+            // Write service file
+            File::put($servicePath, $serviceContent);
+            $this->info("Service {$serviceName} generated successfully at {$servicePath}");
+
+            // Register service binding in AppServiceProvider
+            $this->registerServiceBinding($serviceInterfaceName, $serviceName);
+
+            return 0;
+        } catch (\Exception $e) {
+            $this->error("Error generating service: " . $e->getMessage());
+            $this->error($e->getTraceAsString());
+            return 1;
+        }
+    }
+
+    /**
+     * Generate the Service Interface content
+     */
+    protected function generateInterfaceContent($modelName, $interfaceName)
+    {
+        $namespace = 'App\\Services\\DB\\Contracts';
+        $modelImport = "App\\Models\\{$modelName}";
+
+        $content = "<?php\n\n" .
+            "namespace {$namespace};\n\n" .
+            "use {$modelImport};\n" .
+            "use App\\Services\\DB\\BaseServiceInterface;\n" .
+            "use Illuminate\\Pagination\\LengthAwarePaginator;\n\n" .
+            "interface {$interfaceName} extends BaseServiceInterface\n" .
+            "{\n" .
+            "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator;\n" .
+            "}\n";
+
+        return $content;
+    }
+
+    /**
+     * Generate the Service class content
+     */
+    protected function generateServiceContent($modelName, $fullModelName, $hasFileUpload, $fileFields)
+    {
+        $namespace = 'App\\Services\\DB\\Providers';
+        $serviceName = "{$modelName}Service";
+        $interfaceName = "{$modelName}ServiceInterface";
+        $modelShortName = $modelName;
+
+        // Get complexity mode
+        $simple = $this->option('simple');
+        $advanced = $this->option('advanced');
+
+        // Prepare imports
+        $imports = [
+            "namespace {$namespace};\n\n",
+            "use {$fullModelName};\n",
+            "use App\\Services\\DB\\Contracts\\{$interfaceName};\n",
+            "use App\\Services\\DB\\BaseService;\n",
+            "use Illuminate\\Database\\Eloquent\\Model;\n",
+            "use Illuminate\\Pagination\\LengthAwarePaginator;\n",
+        ];
+
+        // Add repository import for advanced mode
+        if ($advanced) {
+            $imports[] = "use App\\Repositories\\{$modelName}Repository;\n";
+        }
+
+        // Generate methods
+        $methods = [];
+
+        // getModel method
+        if ($simple) {
+            $methods[] = "    protected function getModel(): Model\n" .
+                "    {\n" .
+                "        return new {$modelShortName}();\n" .
+                "    }";
+        } else {
+            $methods[] = "    protected function getModel(): Model\n" .
+                "    {\n" .
+                "        return new {$modelShortName}();\n" .
+                "    }";
+        }
+
+        // Repository property and constructor for advanced mode
+        if ($advanced) {
+            $methods[] = "    protected {$modelName}Repository \$repository;\n\n" .
+                "    public function __construct({$modelName}Repository \$repository)\n" .
+                "    {\n" .
+                "        \$this->repository = \$repository;\n" .
+                "        parent::__construct();\n" .
+                "    }";
+        }
+
+        // getFilterableFields method
+        $methods[] = "    protected function getFilterableFields(): array\n" .
+            "    {\n" .
+            "        return ['search'];\n" .
+            "    }";
+
+        // beforeCreate method for file handling
+        if ($hasFileUpload) {
+            $beforeCreate = "    protected function beforeCreate(array &\$data): void\n" .
+                "    {\n";
+
+            foreach ($fileFields as $field) {
+                $beforeCreate .= "        if (isset(\$data['{$field}'])) {\n" .
+                    "            \$data['{$field}_path'] = \$this->handleImageUpload(\$data['{$field}'], '{$modelName}s');\n" .
+                    "            unset(\$data['{$field}']);\n" .
+                    "        }\n";
+            }
+
+            $beforeCreate .= "    }";
+            $methods[] = $beforeCreate;
+        }
+
+        // afterCreate method
+        if ($simple) {
+            $methods[] = "    protected function afterCreate(Model \$model, array \$data): void\n" .
+                "    {\n" .
+                "        // Add any post-creation logic here\n" .
+                "    }";
+        } else {
+            $relationships = $this->getModelRelationshipNames($fullModelName) ?: [];
+            if (!empty($relationships)) {
+                $relationshipCode = "        \$model->load(['" . implode("', '", $relationships) . "']);\n";
+                $methods[] = "    protected function afterCreate(Model \$model, array \$data): void\n" .
+                    "    {\n" .
+                    "        // Load relationships\n" .
+                    $relationshipCode .
+                    "    }";
+            } else {
+                $methods[] = "    protected function afterCreate(Model \$model, array \$data): void\n" .
+                    "    {\n" .
+                    "        // Load any necessary relationships here\n" .
+                    "    }";
+            }
+        }
+
+        // beforeUpdate method for file handling
+        if ($hasFileUpload) {
+            $beforeUpdate = "    protected function beforeUpdate(array &\$data, \$id): void\n" .
+                "    {\n";
+
+            foreach ($fileFields as $field) {
+                $beforeUpdate .= "        if (isset(\$data['{$field}'])) {\n" .
+                    "            \${$modelName} = \$this->find(\$id);\n" .
+                    "            if (\${$modelName}->{$field}_path) {\n" .
+                    "                \$this->deleteFile(\${$modelName}->{$field}_path);\n" .
+                    "            }\n" .
+                    "            \$data['{$field}_path'] = \$this->handleImageUpload(\$data['{$field}'], '{$modelName}s');\n" .
+                    "            unset(\$data['{$field}']);\n" .
+                    "        }\n";
+            }
+
+            $beforeUpdate .= "    }";
+            $methods[] = $beforeUpdate;
+        }
+
+        // afterUpdate method
+        if ($simple) {
+            $methods[] = "    protected function afterUpdate(Model \$model, array \$data): void\n" .
+                "    {\n" .
+                "        // Add any post-update logic here\n" .
+                "    }";
+        } else {
+            $relationships = $this->getModelRelationshipNames($fullModelName) ?: [];
+            if (!empty($relationships)) {
+                $relationshipCode = "        \$model->load(['" . implode("', '", $relationships) . "']);\n";
+                $methods[] = "    protected function afterUpdate(Model \$model, array \$data): void\n" .
+                    "    {\n" .
+                    "        // Load relationships\n" .
+                    $relationshipCode .
+                    "    }";
+            } else {
+                $methods[] = "    protected function afterUpdate(Model \$model, array \$data): void\n" .
+                    "    {\n" .
+                    "        // Load any necessary relationships here\n" .
+                    "    }";
+            }
+        }
+
+        // beforeDelete method for file cleanup
+        if ($hasFileUpload) {
+            $beforeDelete = "    protected function beforeDelete(\$id): void\n" .
+                "    {\n" .
+                "        \${$modelName} = \$this->find(\$id);\n";
+
+            foreach ($fileFields as $field) {
+                $beforeDelete .= "        if (\${$modelName}->{$field}_path) {\n" .
+                    "            \$this->deleteFile(\${$modelName}->{$field}_path);\n" .
+                    "        }\n";
+            }
+
+            $beforeDelete .= "    }";
+            $methods[] = $beforeDelete;
+        }
+
+        // Custom method required by interface
+        if ($simple) {
+            $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+                "    {\n" .
+                "        return \$this->getPaginated();\n" .
+                "    }";
+        } else {
+            $relationships = $this->getModelRelationshipNames($fullModelName) ?: [];
+            if (!empty($relationships)) {
+                $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+                    "    {\n" .
+                    "        return \$this->getPaginated(\n" .
+                    "            relations: ['" . implode("', '", $relationships) . "']\n" .
+                    "        );\n" .
+                    "    }";
+            } else {
+                $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+                    "    {\n" .
+                    "        return \$this->getPaginated(\n" .
+                    "            relations: []\n" .
+                    "        );\n" .
+                    "    }";
+            }
+        }
+
+        // Add additional methods for advanced mode
+        if ($advanced) {
+            $methods[] = "    /**\n" .
+                "     * Get {$modelName}s with caching\n" .
+                "     */\n" .
+                "    public function getCached{$modelName}s(): array\n" .
+                "    {\n" .
+                "        return \$this->repository->getCached{$modelName}s();\n" .
+                "    }\n";
+
+            $methods[] = "    /**\n" .
+                "     * Clear {$modelName} cache\n" .
+                "     */\n" .
+                "    public function clearCache(): void\n" .
+                "    {\n" .
+                "        \$this->repository->clearCache();\n" .
+                "    }";
+        }
+
+        // Create class content
+        $content = "<?php\n\n" .
+            implode("", $imports) . "\n" .
+            "/**\n" .
+            " * {$modelName} Service handles business logic for {$modelName} operations\n" .
+            ($simple ? " * This is a simplified service implementation suitable for basic CRUD operations\n" : "") .
+            ($advanced ? " * This is an advanced service implementation with repository pattern for complex operations\n" : "") .
+            " */\n" .
+            "class {$serviceName} extends BaseService implements {$interfaceName}\n" .
+            "{\n" .
+            implode("\n\n", $methods) . "\n" .
+            "}\n";
+
+        return $content;
+    }
+
+    /**
+     * Get model relationship method names
+     */
+    protected function getModelRelationshipNames($modelClass)
+    {
+        try {
+            $model = new $modelClass();
+            $relationships = [];
+
+            $reflection = new ReflectionClass($model);
+            $methods = $reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+
+            foreach ($methods as $method) {
+                // Skip if not defined in the model class
+                if ($method->class !== get_class($model)) {
+                    continue;
+                }
+
+                // Skip common methods
+                if (in_array($method->name, [
+                    '__construct',
+                    'getTable',
+                    'getKeyName',
+                    'getKey',
+                    'getFillable',
+                    'getHidden',
+                    'getConnection',
+                    'toArray'
+                ])) {
+                    continue;
+                }
+
+                // Get method content
+                try {
+                    $contents = file_get_contents($method->getFileName());
+                    $startLine = $method->getStartLine() - 1;
+                    $endLine = $method->getEndLine();
+                    $length = $endLine - $startLine;
+                    $methodContent = implode('', array_slice(file($method->getFileName()), $startLine, $length));
+
+                    // Check if this method returns a relationship
+                    if (
+                        preg_match('/return\s+\$this->(hasOne|hasMany|belongsTo|belongsToMany|morphTo|morphMany|morphToMany)\(/', $methodContent) ||
+                        preg_match('/return\s+\$this->(hasManyThrough|hasOneThrough)\(/', $methodContent)
+                    ) {
+                        $relationships[] = $method->name;
+                    }
+                } catch (\Exception $e) {
+                    // Skip if we can't read the method contents
+                    continue;
+                }
+            }
+
+            return $relationships;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Register the service binding in AppServiceProvider
+     */
+    protected function registerServiceBinding($interfaceName, $serviceName)
+    {
+        $providerPath = app_path('Providers/AppServiceProvider.php');
+
+        if (!File::exists($providerPath)) {
+            $this->warn("AppServiceProvider.php not found. Please manually register the service binding.");
+            $this->info("use App\\Services\\DB\\Contracts\\{$interfaceName};");
+            $this->info("use App\\Services\\DB\\Providers\\{$serviceName};");
+            $this->info("\$this->app->bind({$interfaceName}::class, {$serviceName}::class);");
+            return;
+        }
+
+        $content = File::get($providerPath);
+
+        // Check if the binding already exists
+        if (Str::contains($content, "{$interfaceName}::class")) {
+            $this->info("Service binding already exists in AppServiceProvider.");
+            return;
+        }
+
+        // Add imports if they don't exist
+        $interfaceImport = "use App\\Services\\DB\\Contracts\\{$interfaceName};";
+        $serviceImport = "use App\\Services\\DB\\Providers\\{$serviceName};";
+
+        if (!Str::contains($content, $interfaceImport)) {
+            $content = preg_replace(
+                '/(namespace App\\\\Providers;.*?)(\s*use )/',
+                "$1\n{$interfaceImport}\n$2",
+                $content,
+                1
+            );
+        }
+
+        if (!Str::contains($content, $serviceImport)) {
+            $content = preg_replace(
+                '/(namespace App\\\\Providers;.*?)(\s*use )/',
+                "$1\n{$serviceImport}\n$2",
+                $content,
+                1
+            );
+        }
+
+        // Add binding in register method
+        $bindingCode = "        \$this->app->bind({$interfaceName}::class, {$serviceName}::class);";
+
+        if (preg_match('/public function register\(\).*?{(.*?)}/s', $content, $matches)) {
+            $registerMethodContent = $matches[1];
+
+            // Make sure we don't add it after the closing brace
+            $newRegisterMethodContent = $registerMethodContent . "\n" . $bindingCode;
+
+            $content = str_replace($registerMethodContent, $newRegisterMethodContent, $content);
+
+            // Save the updated file
+            File::put($providerPath, $content);
+            $this->info("Service binding added to AppServiceProvider.");
+        } else {
+            $this->warn("Could not find the register method in AppServiceProvider. Please manually add the binding.");
+            $this->info($bindingCode);
+        }
+    }
+}

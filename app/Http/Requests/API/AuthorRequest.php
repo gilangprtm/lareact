@@ -3,10 +3,13 @@
 namespace App\Http\Requests\API;
 
 use App\DTO\AuthorRequestDto;
+use App\Http\Requests\Traits\AuthorRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AuthorRequest extends FormRequest
 {
+    use AuthorRules;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,10 +25,11 @@ class AuthorRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Menggunakan rules dari DTO
-        return AuthorRequestDto::rules();
+        return array_merge($this->baseRules(), $this->apiRules(), [
+            'photo_url' => ['nullable', 'url'],
+        ]);
     }
-    
+
     /**
      * Convert validated input to DTO
      */

@@ -3,26 +3,26 @@
 namespace App\Http\Resources\API;
 
 use App\DTO\AuthorDto;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Base\BaseAuthorResource;
 
-class AuthorResource extends JsonResource
+class AuthorResource extends BaseAuthorResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
-        // Menggunakan DTO untuk transformasi dan dokumentasi
-        $authorDto = AuthorDto::fromModel($this->resource);
-
-        // Memastikan photo_url dibuat dengan benar
-        if ($this->resource->photo_path) {
-            $authorDto->photo_url = asset('storage/' . $this->resource->photo_path);
-        }
-
-        return $authorDto->toArray();
+        // API-specific transformation
+        return array_merge($this->getBaseAttributes(), $this->getApiAttributes(), [
+            'photo_url' => $this->resource->photo_path ? asset('storage/' . $this->resource->photo_path) : null,
+            'links' => [
+                'self' => route('api.authors.show', $this->id),
+                'update' => route('api.authors.update', $this->id),
+                'delete' => route('api.authors.destroy', $this->id),
+            ]
+        ]);
     }
 }

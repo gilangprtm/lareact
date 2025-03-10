@@ -50,8 +50,9 @@ class AuthorController extends Controller
                 'state' => $this->getState(),
             ]);
         } catch (Throwable $e) {
-            flashMessage(MessageType::ERROR->message('Penulis', $e->getMessage()), 'error');
-            return back();
+            return back()
+                ->withInput()
+                ->with('error', MessageType::ERROR->message('Penulis', $e->getMessage()));
         }
     }
 

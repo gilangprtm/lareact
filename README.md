@@ -4,13 +4,63 @@ Aplikasi manajemen buku menggunakan Laravel + React (Inertia.js)
 
 ## Dokumentasi Generator API
 
-Proyek ini menggunakan pendekatan Data Transfer Object (DTO) untuk menghasilkan API yang konsisten dan terdokumentasi dengan baik. Lihat dokumentasi berikut untuk informasi lebih lanjut:
+Proyek ini menggunakan arsitektur berbasis DTO (Data Transfer Object) dan generator untuk mempercepat pengembangan dengan pola yang konsisten. Kami menyediakan tiga mode arsitektur yang dapat disesuaikan berdasarkan ukuran dan kompleksitas proyek Anda:
 
-- [Alur Kerja Generator API](docs/generator-workflow.md) - Penjelasan tentang alur kerja lengkap generator API
+- **Simple Mode**: Untuk proyek kecil hingga menengah dengan logika bisnis sederhana
+- **Standard Mode**: Untuk proyek menengah dengan kompleksitas moderat (default)
+- **Advanced Mode**: Untuk proyek besar dan kompleks dengan aturan bisnis yang rumit
+
+### Dokumentasi Lengkap
+
+- [Alur Kerja Generator API](docs/generator-workflow.md) - Dokumentasi lengkap tentang generator dan arsitektur
 - [Diagram Generator API](docs/generator-diagram.md) - Diagram visual alur penggunaan generator
 - [FAQ DTO dan Generator](docs/dto-faq.md) - Pertanyaan umum tentang pendekatan DTO
 - [Pengelolaan Dokumentasi API](docs/api-docs-management.md) - Panduan untuk mengelola dokumentasi API
 - [Changelog](CHANGELOG.md) - Log perubahan dan pengembangan proyek
+
+### Generator Utama
+
+Untuk membuat modul lengkap (DTO, Service, Controller, dll) dari sebuah model:
+
+```bash
+php artisan make:module Product --with-web
+
+# Mode sederhana untuk proyek kecil
+php artisan make:module Product --simple --with-web
+
+# Mode lanjutan untuk proyek besar dan kompleks
+php artisan make:module Product --advanced --with-web
+```
+
+### Generator Individual
+
+Anda juga dapat menggunakan generator terpisah untuk komponen spesifik:
+
+```bash
+# Membuat DTO dan RequestDTO
+php artisan make:dto Product
+
+# Membuat trait validasi
+php artisan make:request-trait ProductRequestDto
+
+# Membuat base resource
+php artisan make:base-resource ProductDto
+
+# Membuat service dan interface
+php artisan make:service Product
+
+# Membuat DB controller dan file terkait
+php artisan make:db-controller Product
+
+# Membuat web controller
+php artisan make:web-controller Product
+
+# Membuat API request dan resource
+php artisan make:api-classes ProductDto
+
+# Membuat API controller
+php artisan make:api-controller Product
+```
 
 ## Struktur Project
 

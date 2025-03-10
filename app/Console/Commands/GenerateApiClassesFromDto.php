@@ -43,143 +43,137 @@ class GenerateApiClassesFromDto extends Command
     }
 
     /**
-     * Generate FormRequest from DTO
+     * Generate the API Request class
      */
     protected function generateRequest($entityName, $dtoClass, $path, $force)
     {
-        $requestDtoClass = str_replace('Dto', 'RequestDto', $dtoClass);
-        $requestClassName = "{$entityName}Request";
-        $requestDirPath = "{$path}/Requests/API";
-        $requestFilePath = "{$requestDirPath}/{$requestClassName}.php";
+        $requestName = "{$entityName}Request";
+        $requestDtoClass = "App\\DTO\\{$entityName}RequestDto";
+        $namespace = 'App\\Http\\Requests\\API';
+        $directory = base_path("{$path}/Requests/API");
 
-        // Check if the target directory exists, create if not
-        if (!File::exists($requestDirPath)) {
-            File::makeDirectory($requestDirPath, 0755, true);
+        // Check if the trait exists, generate it if not
+        $traitPath = app_path("Http/Requests/Traits/{$entityName}Rules.php");
+        if (!File::exists($traitPath)) {
+            $this->call('make:request-trait', [
+                'dto' => "{$entityName}RequestDto",
+                '--force' => $force
+            ]);
+            $this->info("Generated trait for {$requestName}.");
         }
 
-        // Check if the file already exists
-        if (File::exists($requestFilePath) && !$force) {
-            if (!$this->confirm("Request {$requestClassName} already exists. Overwrite?")) {
-                $this->info("Request generation skipped.");
+        // Create directory if not exists
+        if (!File::exists($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        $requestPath = "{$directory}/{$requestName}.php";
+
+        if (File::exists($requestPath) && !$force) {
+            if (!$this->confirm("The request {$requestName} already exists. Do you want to overwrite it?")) {
+                $this->info("API Request generation cancelled.");
                 return;
             }
         }
 
-        // Generate Request content
-        $content = $this->generateRequestContent($entityName, $requestClassName, $requestDtoClass);
+        // Create request content
+        $content = "<?php\n\n" .
+            "namespace {$namespace};\n\n" .
+            "use App\\DTO\\{$entityName}RequestDto;\n" .
+            "use App\\Http\\Requests\\Traits\\{$entityName}Rules;\n" .
+            "use Illuminate\\Foundation\\Http\\FormRequest;\n\n" .
+            "class {$requestName} extends FormRequest\n" .
+            "{\n" .
+            "    use {$entityName}Rules;\n\n" .
+            "    /**\n" .
+            "     * Determine if the user is authorized to make this request.\n" .
+            "     *\n" .
+            "     * @return bool\n" .
+            "     */\n" .
+            "    public function authorize(): bool\n" .
+            "    {\n" .
+            "        return true;\n" .
+            "    }\n\n" .
+            "    /**\n" .
+            "     * Get the validation rules that apply to the request.\n" .
+            "     *\n" .
+            "     * @return array\n" .
+            "     */\n" .
+            "    public function rules(): array\n" .
+            "    {\n" .
+            "        return array_merge(\$this->baseRules(), \$this->apiRules());\n" .
+            "    }\n\n" .
+            "    /**\n" .
+            "     * Convert the request to a DTO.\n" .
+            "     *\n" .
+            "     * @return {$entityName}RequestDto\n" .
+            "     */\n" .
+            "    public function toDto(): {$entityName}RequestDto\n" .
+            "    {\n" .
+            "        return {$entityName}RequestDto::fromSource(\$this->validated());\n" .
+            "    }\n" .
+            "}\n";
 
-        // Write to file
-        File::put($requestFilePath, $content);
-
-        $this->info("Request {$requestClassName} generated successfully at {$requestFilePath}");
+        File::put($requestPath, $content);
+        $this->info("Request {$requestName} generated successfully at {$requestPath}");
     }
 
     /**
-     * Generate the content for the Request class
-     */
-    protected function generateRequestContent($entityName, $requestClassName, $requestDtoClass)
-    {
-        $shortDtoClass = class_basename($requestDtoClass);
-
-        return "<?php
-
-namespace App\\Http\\Requests\\API;
-
-use {$requestDtoClass};
-use Illuminate\\Foundation\\Http\\FormRequest;
-
-class {$requestClassName} extends FormRequest
-{
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \\Illuminate\\Contracts\\Validation\\ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
-    {
-        // Menggunakan rules dari DTO
-        return {$shortDtoClass}::rules();
-    }
-    
-    /**
-     * Convert validated input to DTO
-     */
-    public function toDto(): {$shortDtoClass}
-    {
-        return {$shortDtoClass}::fromSource(\$this->validated());
-    }
-}
-";
-    }
-
-    /**
-     * Generate Resource from DTO
+     * Generate the API Resource class
      */
     protected function generateResource($entityName, $dtoClass, $path, $force)
     {
-        $resourceClassName = "{$entityName}Resource";
-        $resourceDirPath = "{$path}/Resources/API";
-        $resourceFilePath = "{$resourceDirPath}/{$resourceClassName}.php";
+        $resourceName = "{$entityName}Resource";
+        $namespace = 'App\\Http\\Resources\\API';
+        $directory = base_path("{$path}/Resources/API");
 
-        // Check if the target directory exists, create if not
-        if (!File::exists($resourceDirPath)) {
-            File::makeDirectory($resourceDirPath, 0755, true);
+        // Check if the base resource exists, generate it if not
+        $baseResourcePath = app_path("Http/Resources/Base/Base{$entityName}Resource.php");
+        if (!File::exists($baseResourcePath)) {
+            $this->call('make:base-resource', [
+                'dto' => "{$entityName}Dto",
+                '--force' => $force
+            ]);
+            $this->info("Generated base resource for {$resourceName}.");
         }
 
-        // Check if the file already exists
-        if (File::exists($resourceFilePath) && !$force) {
-            if (!$this->confirm("Resource {$resourceClassName} already exists. Overwrite?")) {
-                $this->info("Resource generation skipped.");
+        // Create directory if not exists
+        if (!File::exists($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        $resourcePath = "{$directory}/{$resourceName}.php";
+
+        if (File::exists($resourcePath) && !$force) {
+            if (!$this->confirm("The resource {$resourceName} already exists. Do you want to overwrite it?")) {
+                $this->info("API Resource generation cancelled.");
                 return;
             }
         }
 
-        // Generate Resource content
-        $content = $this->generateResourceContent($entityName, $resourceClassName, $dtoClass);
+        // Create resource content
+        $content = "<?php\n\n" .
+            "namespace {$namespace};\n\n" .
+            "use App\\DTO\\{$entityName}Dto;\n" .
+            "use App\\Http\\Resources\\Base\\Base{$entityName}Resource;\n\n" .
+            "class {$resourceName} extends Base{$entityName}Resource\n" .
+            "{\n" .
+            "    /**\n" .
+            "     * Transform the resource into an array.\n" .
+            "     *\n" .
+            "     * @param  \\Illuminate\\Http\\Request  \$request\n" .
+            "     * @return array\n" .
+            "     */\n" .
+            "    public function toArray(\$request): array\n" .
+            "    {\n" .
+            "        // Option 1: Use the DTO for transformation\n" .
+            "        \${$entityName}Dto = {$entityName}Dto::fromModel(\$this->resource);\n\n" .
+            "        // Option 2: Use the base attributes with API-specific attributes\n" .
+            "        return array_merge(\$this->getBaseAttributes(), \$this->getApiAttributes());\n" .
+            "    }\n" .
+            "}\n";
 
-        // Write to file
-        File::put($resourceFilePath, $content);
-
-        $this->info("Resource {$resourceClassName} generated successfully at {$resourceFilePath}");
-    }
-
-    /**
-     * Generate the content for the Resource class
-     */
-    protected function generateResourceContent($entityName, $resourceClassName, $dtoClass)
-    {
-        $shortDtoClass = class_basename($dtoClass);
-        $modelClass = "App\\Models\\{$entityName}";
-
-        return "<?php
-
-namespace App\\Http\\Resources\\API;
-
-use {$dtoClass};
-use Illuminate\\Http\\Request;
-use Illuminate\\Http\\Resources\\Json\\JsonResource;
-
-class {$resourceClassName} extends JsonResource
-{
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(Request \$request): array
-    {
-        // Menggunakan DTO untuk transformasi dan dokumentasi
-        return {$shortDtoClass}::fromModel(\$this->resource)->toArray();
-    }
-}
-";
+        File::put($resourcePath, $content);
+        $this->info("Resource {$resourceName} generated successfully at {$resourcePath}");
     }
 }
