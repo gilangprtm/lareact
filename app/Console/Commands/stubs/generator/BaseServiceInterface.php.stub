@@ -4,7 +4,6 @@ namespace App\Services\DB;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 interface BaseServiceInterface
 {

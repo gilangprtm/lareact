@@ -193,11 +193,10 @@ class GenerateServiceFromModel extends Command
         $content = "<?php\n\n" .
             "namespace {$namespace};\n\n" .
             "use {$modelImport};\n" .
-            "use App\\Services\\DB\\BaseServiceInterface;\n" .
-            "use Illuminate\\Pagination\\LengthAwarePaginator;\n\n" .
+            "use App\\Services\\DB\\BaseServiceInterface;\n\n" .
             "interface {$interfaceName} extends BaseServiceInterface\n" .
             "{\n" .
-            "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator;\n" .
+            "    public function getAllWith{$modelName}s(int \$perPage = 10): array;\n" .
             "}\n";
 
         return $content;
@@ -224,7 +223,6 @@ class GenerateServiceFromModel extends Command
             "use App\\Services\\DB\\Contracts\\{$interfaceName};\n",
             "use App\\Services\\DB\\BaseService;\n",
             "use Illuminate\\Database\\Eloquent\\Model;\n",
-            "use Illuminate\\Pagination\\LengthAwarePaginator;\n",
         ];
 
         // Add repository import for advanced mode
@@ -364,21 +362,21 @@ class GenerateServiceFromModel extends Command
 
         // Custom method required by interface
         if ($simple) {
-            $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+            $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): array\n" .
                 "    {\n" .
                 "        return \$this->getPaginated();\n" .
                 "    }";
         } else {
             $relationships = $this->getModelRelationshipNames($fullModelName) ?: [];
             if (!empty($relationships)) {
-                $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+                $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): array\n" .
                     "    {\n" .
                     "        return \$this->getPaginated(\n" .
                     "            relations: ['" . implode("', '", $relationships) . "']\n" .
                     "        );\n" .
                     "    }";
             } else {
-                $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+                $methods[] = "    public function getAllWith{$modelName}s(int \$perPage = 10): array\n" .
                     "    {\n" .
                     "        return \$this->getPaginated(\n" .
                     "            relations: []\n" .
@@ -566,7 +564,6 @@ class GenerateServiceFromModel extends Command
             "use App\\Services\\Traits\\HandleFileUploads;\n" .
             "use Illuminate\\Database\\Eloquent\\Collection;\n" .
             "use Illuminate\\Database\\Eloquent\\Model;\n" .
-            "use Illuminate\\Pagination\\LengthAwarePaginator;\n\n" .
             "/**\n" .
             " * {$modelName} Service handles business logic for {$modelName} operations\n" .
             " * This is an advanced service implementation with repository pattern for complex operations\n" .
@@ -607,7 +604,7 @@ class GenerateServiceFromModel extends Command
             "    {\n" .
             "        // Implement beforeDelete logic\n" .
             "    }\n\n" .
-            "    public function getAllWith{$modelName}s(int \$perPage = 10): LengthAwarePaginator\n" .
+            "    public function getAllWith{$modelName}s(int \$perPage = 10): array\n" .
             "    {\n" .
             "        return \$this->getPaginated(\n" .
             "            relations: []\n" .

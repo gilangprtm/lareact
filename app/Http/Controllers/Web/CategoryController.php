@@ -44,7 +44,7 @@ class CategoryController extends Controller
         try {
             $categories = $this->dbController->index();
 
-            return inertia('Categories/Index', [
+            return inertia('categories/index', [
                 'datas' => $categories,
                 'pageSettings' => $this->pageSettings,
                 'state' => $this->getState(),
@@ -58,7 +58,7 @@ class CategoryController extends Controller
 
     public function create(): Response
     {
-        return inertia('Categories/Form', [
+        return inertia('categories/form', [
             'data' => null,
             'pageSettings' => array_merge($this->pageSettings, [
                 'method' => 'POST',
@@ -84,7 +84,7 @@ class CategoryController extends Controller
 
     public function edit(Category $category): Response
     {
-        return inertia('Categories/Form', [
+        return inertia('categories/form', [
             'data' => $category->load(['parent:id,name', 'children:id,name']),
             'pageSettings' => array_merge($this->pageSettings, [
                 'method' => 'PUT',
@@ -96,7 +96,7 @@ class CategoryController extends Controller
 
     public function view(Category $category): Response
     {
-        return inertia('Categories/Form', [
+        return inertia('categories/form', [
             'data' => $category->load(['parent:id,name', 'children:id,name']),
             'pageSettings' => array_merge($this->pageSettings, [
                 'method' => 'GET',

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Author;
 use App\Services\DB\Providers\AuthorService;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class AuthorController extends Controller
 {
@@ -14,7 +13,7 @@ class AuthorController extends Controller
         protected AuthorService $authorService
     ) {}
 
-    public function index(): LengthAwarePaginator
+    public function index(): array
     {
         return $this->authorService->getAllWithBooks();
     }

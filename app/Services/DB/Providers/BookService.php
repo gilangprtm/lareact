@@ -6,7 +6,6 @@ use App\Models\Book;
 use App\Services\DB\Contracts\BookServiceInterface;
 use App\Services\DB\BaseService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class BookService extends BaseService implements BookServiceInterface
 {
@@ -79,7 +78,7 @@ class BookService extends BaseService implements BookServiceInterface
         }
     }
 
-    public function getAllWithRelations(int $perPage = 10): LengthAwarePaginator
+    public function getAllWithRelations(int $perPage = 10): array
     {
         return $this->getPaginated(
             relations: [

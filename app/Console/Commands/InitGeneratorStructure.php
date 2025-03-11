@@ -29,6 +29,7 @@ class InitGeneratorStructure extends Command
         'app/Services/DB/BaseServiceInterface.php' => 'BaseServiceInterface.php.stub',
         'app/Http/Controllers/ApiController.php' => 'ApiController.php.stub',
         'app/Services/Traits/HandlesFileUploads.php' => 'HandlesFileUploads.php.stub',
+        'app/Services/Traits/WithPagination.php' => 'WithPagination.php.stub',
     ];
 
     public function handle()

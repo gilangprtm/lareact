@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\DB\Providers\CategoryService;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class CategoryController extends Controller
 {
@@ -14,7 +13,12 @@ class CategoryController extends Controller
         protected CategoryService $categoryService
     ) {}
 
-    public function index(): LengthAwarePaginator
+    /**
+     * Get all categories with pagination
+     * 
+     * @return array
+     */
+    public function index(): array
     {
         return $this->categoryService->getAllWithChildren();
     }

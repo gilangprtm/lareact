@@ -105,8 +105,7 @@ class GenerateRepositoryFromModel extends Command
         return "<?php\n\n" .
             "namespace {$namespace};\n\n" .
             "use {$fullModelName};\n" .
-            "use Illuminate\\Database\\Eloquent\\Collection;\n" .
-            "use Illuminate\\Pagination\\LengthAwarePaginator;\n\n" .
+            "use Illuminate\\Database\\Eloquent\\Collection;\n\n" .
             "interface {$interfaceName}\n" .
             "{\n" .
             "    /**\n" .
@@ -122,9 +121,9 @@ class GenerateRepositoryFromModel extends Command
             "     *\n" .
             "     * @param int \$perPage\n" .
             "     * @param array \$columns\n" .
-            "     * @return LengthAwarePaginator\n" .
+            "     * @return array\n" .
             "     */\n" .
-            "    public function getPaginated(int \$perPage = 15, array \$columns = ['*']): LengthAwarePaginator;\n\n" .
+            "    public function getPaginated(int \$perPage = 15, array \$columns = ['*']): array;\n\n" .
 
             "    /**\n" .
             "     * Find by ID\n" .
@@ -194,7 +193,6 @@ class GenerateRepositoryFromModel extends Command
             "use {$fullModelName};\n" .
             "use {$interfaceNamespace}\\{$interfaceName};\n" .
             "use Illuminate\\Database\\Eloquent\\Collection;\n" .
-            "use Illuminate\\Pagination\\LengthAwarePaginator;\n" .
             "use Illuminate\\Support\\Facades\\Cache;\n\n" .
             "class {$implementationName} implements {$interfaceName}\n" .
             "{\n" .
@@ -223,9 +221,9 @@ class GenerateRepositoryFromModel extends Command
             "     *\n" .
             "     * @param int \$perPage\n" .
             "     * @param array \$columns\n" .
-            "     * @return LengthAwarePaginator\n" .
+            "     * @return array\n" .
             "     */\n" .
-            "    public function getPaginated(int \$perPage = 15, array \$columns = ['*']): LengthAwarePaginator\n" .
+            "    public function getPaginated(int \$perPage = 15, array \$columns = ['*']): array\n" .
             "    {\n" .
             "        // Pagination results are not cached because they depend on the page parameter\n" .
             "        return {$modelName}::paginate(\$perPage, \$columns);\n" .

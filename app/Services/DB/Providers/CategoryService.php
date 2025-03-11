@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Services\DB\Contracts\CategoryServiceInterface;
 use App\Services\DB\BaseService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
 class CategoryService extends BaseService implements CategoryServiceInterface
@@ -42,7 +41,8 @@ class CategoryService extends BaseService implements CategoryServiceInterface
     {
         $model->load(['parent:id,name', 'children:id,name']);
     }
-    public function getAllWithChildren(int $perPage = 10): LengthAwarePaginator
+
+    public function getAllWithChildren(int $perPage = 10): array
     {
         return $this->getPaginated(
             relations: ['children:id,name,slug,parent_id', 'books:id,title,category_id']

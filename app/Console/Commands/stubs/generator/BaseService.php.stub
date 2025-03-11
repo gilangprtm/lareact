@@ -4,15 +4,16 @@ namespace App\Services\DB;
 
 use App\Services\DB\BaseServiceInterface;
 use App\Services\Traits\HandlesFileUploads;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Traits\WithPagination;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 abstract class BaseService implements BaseServiceInterface
 {
     use HandlesFileUploads;
+
+    use WithPagination;
 
     protected $model;
 
@@ -32,15 +33,17 @@ abstract class BaseService implements BaseServiceInterface
     protected function beforeDelete($id): void {}
     protected function afterDelete($id): void {}
 
-    protected function getPaginated(array $relations = [], array $counts = []): LengthAwarePaginator
+    protected function getPaginated(array $relations = [], array $counts = []): array
     {
-        return $this->getModel()::query()
+        $paginator = $this->getModel()::query()
             ->with($relations)
             ->withCount($counts)
             ->filter(request()->only($this->getFilterableFields()))
             ->sorting(request()->only(['field', 'direction']))
             ->paginate(request('load', 10))
             ->appends(request()->query());
+
+        return $this->formatPagination($paginator);
     }
 
     public function getAll(array $columns = ['*'])

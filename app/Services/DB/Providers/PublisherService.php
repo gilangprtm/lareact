@@ -6,7 +6,6 @@ use App\Models\Publisher;
 use App\Services\DB\Contracts\PublisherServiceInterface;
 use App\Services\DB\BaseService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class PublisherService extends BaseService implements PublisherServiceInterface
 {
@@ -58,7 +57,7 @@ class PublisherService extends BaseService implements PublisherServiceInterface
         }
     }
 
-    public function getAllWithBooks(int $perPage = 10): LengthAwarePaginator
+    public function getAllWithBooks(int $perPage = 10): array
     {
         return $this->getPaginated(
             relations: ['books:id,title,publisher_id']

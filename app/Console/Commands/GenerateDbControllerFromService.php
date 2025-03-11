@@ -241,14 +241,13 @@ class GenerateDbControllerFromService extends Command
             "use App\\Http\\Controllers\\Controller;\n" .
             "use {$modelImport};\n" .
             "use {$serviceInterfaceImport};\n" .
-            "use Illuminate\\Database\\Eloquent\\Collection;\n" .
-            "use Illuminate\\Pagination\\LengthAwarePaginator;\n\n" .
+            "use Illuminate\\Database\\Eloquent\\Collection;\n\n" .
             "class {$controllerName} extends Controller\n" .
             "{\n" .
             "    public function __construct(\n" .
             "        protected {$serviceInterfaceName} \$" . Str::camel($serviceName) . "\n" .
             "    ) {}\n\n" .
-            "    public function index(): LengthAwarePaginator\n" .
+            "    public function index(): array\n" .
             "    {\n" .
             "        return \$this->" . Str::camel($serviceName) . "->getAllWith{$modelName}s();\n" .
             "    }\n\n" .

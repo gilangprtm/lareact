@@ -7,7 +7,6 @@ use App\Services\DB\Contracts\AuthorServiceInterface;
 use App\Services\DB\BaseService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 
 class AuthorService extends BaseService implements AuthorServiceInterface
@@ -87,7 +86,7 @@ class AuthorService extends BaseService implements AuthorServiceInterface
         unset($data['photo']);
     }
 
-    public function getAllWithBooks(int $perPage = 10): LengthAwarePaginator
+    public function getAllWithBooks(int $perPage = 10): array
     {
         return $this->getPaginated(
             relations: ['books:id,title'],

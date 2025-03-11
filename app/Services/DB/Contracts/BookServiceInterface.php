@@ -5,11 +5,10 @@ namespace App\Services\DB\Contracts;
 use App\Models\Book;
 use Illuminate\Http\UploadedFile;
 use App\Services\DB\BaseServiceInterface;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 interface BookServiceInterface extends BaseServiceInterface
 {
-    public function getAllWithRelations(int $perPage = 10): LengthAwarePaginator;
+    public function getAllWithRelations(int $perPage = 10): array;
 
     public function syncAuthors(Book $book, array $authorIds): void;
 

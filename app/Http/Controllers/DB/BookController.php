@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Services\DB\Providers\BookService;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class BookController extends Controller
 {
@@ -14,7 +13,7 @@ class BookController extends Controller
         protected BookService $bookService
     ) {}
 
-    public function index(): LengthAwarePaginator
+    public function index(): array
     {
         return $this->bookService->getAllWithRelations();
     }
