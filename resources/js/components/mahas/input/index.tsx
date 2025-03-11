@@ -1,13 +1,13 @@
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
-import { CheckboxInput } from './CheckboxInput';
-import { DateTimeInput } from './DateTimeInput';
-import { FileInput } from './FileInput';
-import { RadioInput } from './RadioInput';
-import { SelectInput } from './SelectInput';
-import { TextInput } from './TextInput';
-import { TextareaInput } from './TextareaInput';
+import { CheckboxInput } from './checkbox-input';
+import { DateTimeInput } from './date-time-input';
+import { FileInput } from './file-input';
+import { RadioInput } from './radio-input';
+import { SelectInput } from './select-input';
+import { TextareaInput } from './text-area-input';
+import { TextInput } from './text-input';
 import { MahasInputProps, isCheckboxInput, isDateTimeInput, isFileInput, isRadioInput, isSelectInput, isTextInput, isTextareaInput } from './types';
 
 export const MahasInput = React.forwardRef<HTMLElement, MahasInputProps>((props, ref) => {

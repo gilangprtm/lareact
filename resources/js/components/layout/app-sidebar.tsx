@@ -13,10 +13,31 @@ const mainNavItems: NavItem[] = [
         url: '/dashboard',
         icon: LayoutGrid,
     },
+
+    {
+        title: 'Category',
+        url: '/categories',
+        icon: LayoutGrid,
+    },
     {
         title: 'Example',
         url: '/example',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Example Nesting',
+        url: '/example',
+        icon: LayoutGrid,
+        children: [
+            {
+                title: 'Example Child',
+                url: '/example/child',
+            },
+            {
+                title: 'Example Child 2',
+                url: '/example/child2',
+            },
+        ],
     },
 ];
 

@@ -29,6 +29,7 @@ trait WithPagination
                 'prev_page_url' => $paginator->previousPageUrl(),
                 'to' => $paginator->lastItem(),
                 'total' => $paginator->total(),
+                'has_pages' => $paginator->hasPages(),
             ],
         ];
     }
